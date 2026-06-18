@@ -109,6 +109,16 @@ function money(mixed $amount): string
     return number_format((float) $amount, 2, ',', '.') . ' EUR';
 }
 
+function json_response(array $payload, int $status = 200): never
+{
+    if (!headers_sent()) {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 function audit_log(string $action, string $entityType, ?int $entityId = null, ?array $newValue = null, ?array $oldValue = null): void
 {
     $stmt = db()->prepare('INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)');

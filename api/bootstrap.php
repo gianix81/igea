@@ -12,13 +12,6 @@ ini_set('session.name', $app['session_name']);
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 
-function json_response(array $payload, int $status = 200): never
-{
-    http_response_code($status);
-    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 try {
     require_login();
     verify_csrf();

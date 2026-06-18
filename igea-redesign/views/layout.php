@@ -12,6 +12,7 @@ $nav = [
     '/entries'      => 'Reception',
     '/bar'          => 'Bar',
     '/cashdesk'     => 'Cassa',
+    '/reservations' => 'Prenotazioni',
     '/places'       => 'Posti',
     '/reports'      => 'Report',
 ];
@@ -32,7 +33,6 @@ if ($user) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e(app_config('name')) ?></title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2317b3c4'/></svg>">
   <script>
     /* applica il tema prima del paint per evitare il flash */
     (function () {
@@ -69,8 +69,9 @@ if ($user) {
   </div>
 </header>
 <?php endif; ?>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= url('/assets/js/app.js') ?>"></script>
+<main class="app">
+  <?= $content ?>
+</main>
 <script>
   (function () {
     function setTheme(t) {
@@ -82,8 +83,7 @@ if ($user) {
     });
   })();
 </script>
-<main class="app">
-  <?= $content ?>
-</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= url('/assets/js/app.js') ?>"></script>
 </body>
 </html>

@@ -224,26 +224,157 @@ try {
         exit;
     }
 
+    if ($path === '/places/layout') {
+        require_role(['admin', 'reception']);
+        $date = trim((string) request_input('date', date('Y-m-d')));
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $date = date('Y-m-d');
+
+        $layoutStmt = db()->prepare("
+            SELECT p.id, p.code, p.row_label, p.number, p.type, p.base_price,
+                   p.pos_row, p.pos_col, a.name area_name,
+                   CASE
+                     WHEN ep_a.place_id IS NOT NULL THEN 'occupato'
+                     WHEN rp_a.place_id IS NOT NULL THEN 'prenotato-confermato'
+                     WHEN p.status IN ('manutenzione','bloccato') THEN p.status
+                     ELSE 'disponibile'
+                   END day_status
+            FROM pool_places p
+            JOIN pool_areas a ON a.id = p.area_id
+            LEFT JOIN (
+              SELECT ep.place_id FROM entry_places ep
+              JOIN entries e ON e.id = ep.entry_id
+              WHERE ep.status='assegnato' AND e.entry_date=? AND e.status='dentro'
+              GROUP BY ep.place_id
+            ) ep_a ON ep_a.place_id = p.id
+            LEFT JOIN (
+              SELECT rp.place_id FROM reservation_places rp
+              JOIN reservations r ON r.id = rp.reservation_id
+              WHERE rp.status='prenotato' AND r.usage_date=? AND r.status IN ('confermata','in attesa')
+              GROUP BY rp.place_id
+            ) rp_a ON rp_a.place_id = p.id
+            ORDER BY p.pos_row, p.pos_col, p.row_label, p.number
+        ");
+        $layoutStmt->execute([$date, $date]);
+        $layoutPlaces = $layoutStmt->fetchAll();
+        render('places/layout', compact('layoutPlaces', 'date'));
+        exit;
+    }
+
     if ($path === '/places') {
         require_role(['admin', 'reception']);
-        $places = db()->query("SELECT p.*, a.name area_name FROM pool_places p JOIN pool_areas a ON a.id = p.area_id ORDER BY a.name, p.code")->fetchAll();
-        render('places/index', compact('places'));
+
+        // Creazione prenotazione (senza posto specifico — il posto viene abbinato via API /api/places/book.php)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && request_input('_action') === 'new_reservation') {
+            $usageDate = request_input('usage_date', date('Y-m-d'));
+            $usageDateTo = request_input('usage_date_to', '');
+            $notes = trim((string) request_input('notes', ''));
+            if ($usageDateTo && $usageDateTo !== $usageDate) {
+                $notes = trim(($notes ? $notes . ' | ' : '') . 'Periodo: ' . $usageDate . ' → ' . $usageDateTo);
+            }
+            $code = 'PRE' . date('YmdHis') . rand(10, 99);
+            $stmt = db()->prepare("INSERT INTO reservations (reservation_code, customer_id, reservation_date, usage_date, time_slot, people_count, status, deposit_amount, total_amount, paid_amount, payment_method, notes, created_by) VALUES (?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$code, request_input('customer_id'), $usageDate, request_input('time_slot'), request_input('people_count') ?: 1, request_input('res_status') ?: 'confermata', request_input('deposit_amount') ?: 0, request_input('total_amount') ?: 0, request_input('paid_amount') ?: 0, request_input('payment_method') ?: null, $notes, current_user()['id']]);
+            audit_log('create', 'reservation', (int) db()->lastInsertId(), $_POST);
+            json_response(['success' => true, 'date' => $usageDate]);
+        }
+
+        $date = trim((string) request_input('date', date('Y-m-d')));
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = date('Y-m-d');
+        }
+        $stmt = db()->prepare("
+            SELECT
+                p.id, p.area_id, p.code, p.row_label, p.number, p.type, p.base_price, p.status,
+                p.pos_row, p.pos_col,
+                a.name area_name,
+                e.id entry_id, e.checkin_at,
+                CONCAT(ec.first_name,' ',ec.last_name) entry_customer_name,
+                ec.phone entry_customer_phone,
+                ecard.card_code entry_card_code,
+                r.id reservation_id, r.reservation_code, r.time_slot, r.status res_status,
+                CONCAT(rc.first_name,' ',rc.last_name) res_customer_name,
+                rc.phone res_customer_phone,
+                rcard.card_code res_card_code,
+                CASE
+                    WHEN ep_a.place_id IS NOT NULL THEN
+                        CASE entry_res.time_slot
+                            WHEN 'mattina'    THEN 'occupato-mattina'
+                            WHEN 'pomeriggio' THEN 'occupato-pomeriggio'
+                            ELSE 'occupato'
+                        END
+                    WHEN rp_a.place_id IS NOT NULL THEN
+                        CASE
+                            WHEN r.status = 'confermata' AND r.time_slot = 'mattina'    THEN 'prenotato-confermato-mattina'
+                            WHEN r.status = 'confermata' AND r.time_slot = 'pomeriggio' THEN 'prenotato-confermato-pomeriggio'
+                            WHEN r.status = 'confermata'                                THEN 'prenotato-confermato'
+                            WHEN r.status = 'in attesa'  AND r.time_slot = 'mattina'    THEN 'prenotato-attesa-mattina'
+                            WHEN r.status = 'in attesa'  AND r.time_slot = 'pomeriggio' THEN 'prenotato-attesa-pomeriggio'
+                            ELSE 'prenotato-attesa'
+                        END
+                    WHEN p.status IN ('manutenzione','bloccato') THEN p.status
+                    ELSE 'disponibile'
+                END day_status
+            FROM pool_places p
+            JOIN pool_areas a ON a.id = p.area_id
+            LEFT JOIN (
+                SELECT ep.place_id, MIN(ep.entry_id) entry_id
+                FROM entry_places ep
+                JOIN entries e ON e.id = ep.entry_id
+                WHERE ep.status = 'assegnato' AND e.entry_date = ? AND e.status = 'dentro'
+                GROUP BY ep.place_id
+            ) ep_a ON ep_a.place_id = p.id
+            LEFT JOIN entries e ON e.id = ep_a.entry_id
+            LEFT JOIN reservations entry_res ON entry_res.id = e.reservation_id
+            LEFT JOIN customers ec ON ec.id = e.customer_id
+            LEFT JOIN cards ecard ON ecard.id = e.card_id
+            LEFT JOIN (
+                SELECT rp.place_id, MIN(rp.reservation_id) reservation_id
+                FROM reservation_places rp
+                JOIN reservations r ON r.id = rp.reservation_id
+                WHERE rp.status = 'prenotato' AND r.usage_date = ? AND r.status IN ('confermata','in attesa')
+                GROUP BY rp.place_id
+            ) rp_a ON rp_a.place_id = p.id
+            LEFT JOIN reservations r ON r.id = rp_a.reservation_id
+            LEFT JOIN customers rc ON rc.id = r.customer_id
+            LEFT JOIN (SELECT customer_id, MIN(card_code) card_code FROM cards WHERE status='attiva' GROUP BY customer_id) rcard ON rcard.customer_id = rc.id
+            ORDER BY a.id, p.row_label, p.number
+        ");
+        $stmt->execute([$date, $date]);
+        $places = $stmt->fetchAll();
+        $areas = [];
+        foreach ($places as $p) {
+            $aid = (int) $p['area_id'];
+            if (!isset($areas[$aid])) {
+                $areas[$aid] = ['name' => $p['area_name'], 'places' => []];
+            }
+            $areas[$aid]['places'][$p['row_label']][] = $p;
+        }
+        $customers = db()->query("SELECT id, CONCAT(first_name,' ',last_name) name, phone FROM customers WHERE status='attivo' ORDER BY last_name, first_name LIMIT 500")->fetchAll();
+        $poolAreas = db()->query("SELECT id, name FROM pool_areas WHERE active = 1 ORDER BY id")->fetchAll();
+        $rStmt = db()->prepare("
+            SELECT r.id, r.reservation_code, r.usage_date, r.time_slot, r.people_count,
+                   r.total_amount, r.status, r.customer_id, r.notes,
+                   CONCAT(c.first_name,' ',c.last_name) customer_name,
+                   GROUP_CONCAT(pp.code ORDER BY pp.code SEPARATOR ', ') places_codes,
+                   GROUP_CONCAT(pp.id   ORDER BY pp.code SEPARATOR ',')  places_ids
+            FROM reservations r
+            JOIN customers c ON c.id = r.customer_id
+            LEFT JOIN reservation_places rp ON rp.reservation_id = r.id AND rp.status = 'prenotato'
+            LEFT JOIN pool_places pp ON pp.id = rp.place_id
+            WHERE r.usage_date = ? AND r.status NOT IN ('cancellata','no-show')
+            GROUP BY r.id
+            ORDER BY r.id DESC
+        ");
+        $rStmt->execute([$date]);
+        $reservations = $rStmt->fetchAll();
+        $prevDate = date('Y-m-d', strtotime($date . ' -1 day'));
+        $nextDate = date('Y-m-d', strtotime($date . ' +1 day'));
+        render('places/index', compact('places', 'areas', 'date', 'prevDate', 'nextDate', 'customers', 'reservations', 'poolAreas'));
         exit;
     }
 
     if ($path === '/reservations') {
-        require_role(['admin', 'reception']);
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $code = 'PRE' . date('YmdHis');
-            $stmt = db()->prepare("INSERT INTO reservations (reservation_code, customer_id, reservation_date, usage_date, time_slot, people_count, status, deposit_amount, total_amount, paid_amount, payment_method, notes, created_by) VALUES (?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$code, request_input('customer_id'), request_input('usage_date'), request_input('time_slot'), request_input('people_count'), request_input('status'), request_input('deposit_amount'), request_input('total_amount'), request_input('paid_amount'), request_input('payment_method') ?: null, request_input('notes'), current_user()['id']]);
-            audit_log('create', 'reservation', (int) db()->lastInsertId(), $_POST);
-            redirect('/reservations');
-        }
-        $customers = db()->query("SELECT id, CONCAT(first_name, ' ', last_name) name FROM customers ORDER BY last_name, first_name LIMIT 200")->fetchAll();
-        $reservations = db()->query("SELECT r.*, CONCAT(c.first_name, ' ', c.last_name) customer_name FROM reservations r JOIN customers c ON c.id = r.customer_id ORDER BY r.usage_date DESC, r.id DESC LIMIT 100")->fetchAll();
-        render('reservations/index', compact('customers', 'reservations'));
-        exit;
+        redirect('/places');
     }
 
     if ($path === '/reports') {

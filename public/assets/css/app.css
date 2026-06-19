@@ -64,8 +64,11 @@
 
 * { box-sizing: border-box; }
 
+html, body {
+  margin: 0; height: 100%;
+  overflow-x: hidden;      /* no horizontal scroll on any page */
+}
 body {
-  margin: 0;
   background: var(--bg);
   color: var(--text);
   font-family: 'Figtree', system-ui, -apple-system, sans-serif;
@@ -85,13 +88,22 @@ h1, h2, h3, .brand { font-family: 'Bricolage Grotesque', 'Figtree', sans-serif; 
   border-bottom: 1px solid var(--border);
 }
 .topbar .brand {
-  display: flex; align-items: center; gap: 10px;
-  font-weight: 700; font-size: 16px; color: var(--text); text-decoration: none;
+  display: flex; align-items: center;
+  text-decoration: none; flex-shrink: 0;
 }
-.topbar .brand .mark {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #7fe7e0, var(--accent));
+/* Logo reale */
+.brand-img {
+  height: 34px;
+  width: auto;
+  display: block;
+  /* tema chiaro: logo scuro su sfondo bianco — nessun filtro */
+  transition: filter .25s, opacity .15s;
 }
+/* tema scuro: logo invertito → bianco su sfondo scuro */
+:root[data-theme="dark"] .brand-img {
+  filter: invert(1) brightness(1.1);
+}
+.brand-logo-link:hover .brand-img { opacity: .8; }
 .topnav { display: flex; gap: 3px; flex-wrap: wrap; }
 .topnav a {
   display: flex; align-items: center; gap: 7px;
@@ -793,3 +805,73 @@ main.app { padding: 0; }
 }
 .lg-info-occ { background: rgba(232,98,74,.1);  border-color: var(--bad); }
 .lg-info-res { background: rgba(232,160,32,.1); border-color: #e8a020; }
+
+/* ============================================================
+   TOUCH / TABLET OPTIMIZATIONS
+   Applied when primary input is a touch pointer (monitor touch,
+   iPad, Android tablet). Minimum touch target: 44×44 px.
+   ============================================================ */
+@media (pointer: coarse) {
+
+  /* Nav links — bigger tap target */
+  .topnav a {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  /* All buttons get minimum height */
+  .btn, button:not([class*="btn-close"]) {
+    min-height: 44px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  /* Standard form controls — bigger text and height */
+  .form-control, .form-select {
+    height: 48px !important;
+    font-size: 16px !important;  /* prevents iOS auto-zoom */
+    border-radius: 10px !important;
+  }
+  textarea.form-control { height: auto !important; min-height: 80px; }
+
+  /* Table rows — taller for easier tap */
+  table.table td, table.table th { padding: 12px 10px; }
+  table.table tbody tr { min-height: 52px; }
+
+  /* Modal: make it feel native on tablet */
+  .modal-dialog { margin: 12px; max-width: calc(100dvw - 24px); }
+  .modal-content { border-radius: 18px; }
+  .modal-footer .btn { flex: 1; height: 52px; font-size: 15px; }
+
+  /* Stat/info cards */
+  .card { border-radius: 14px; }
+
+  /* Badge chips — easy to read at arm's length */
+  .badge { font-size: 12px; padding: 5px 10px; }
+
+  /* Schede / Scheda a debito big action buttons */
+  .btn-touch-xl {
+    min-height: 64px;
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 14px;
+  }
+
+  /* Customers / registration forms */
+  .reg-input { height: 56px !important; font-size: 17px !important; }
+  .reg-select { height: 56px !important; font-size: 17px !important; }
+  .btn-reg-next, .btn-reg-back, .btn-reg-complete { height: 58px; font-size: 16px; padding: 0 32px; }
+
+  /* Tighter spacing on small tablets */
+  @media (max-width: 900px) {
+    .topnav a { padding: 8px 10px; font-size: 13px; }
+    .reg-body { padding: 14px 12px; }
+  }
+}
+
+/* High-DPI / Retina — sharper borders */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .topbar, .modal-content, .card, .reg-card {
+    border-width: 0.5px;
+  }
+}

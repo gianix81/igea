@@ -4,7 +4,7 @@ class CardService
 {
     public function findByCode(string $code): ?array
     {
-        $stmt = db()->prepare('SELECT c.*, CONCAT(cu.first_name, " ", cu.last_name) customer_name, cu.first_name, cu.last_name, cu.phone FROM cards c JOIN customers cu ON cu.id = c.customer_id WHERE c.card_code = ?');
+        $stmt = db()->prepare('SELECT c.*, CONCAT(cu.last_name, " ", cu.first_name) customer_name, cu.first_name, cu.last_name, cu.phone, cu.photo_path FROM cards c JOIN customers cu ON cu.id = c.customer_id WHERE c.card_code = ?');
         $stmt->execute([trim($code)]);
         $card = $stmt->fetch();
         if (!$card) {

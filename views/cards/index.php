@@ -29,7 +29,7 @@
       <h2 class="h5">Nuova card</h2>
       <input class="form-control mb-2" name="card_code" placeholder="Codice card" required>
       <select class="form-select mb-2" name="customer_id" required><option value="">Cliente</option><?php foreach ($customers as $c): ?><option value="<?= (int) $c['id'] ?>"><?= e($c['name']) ?></option><?php endforeach; ?></select>
-      <select class="form-select mb-2" name="card_type"><option>giornaliera</option><option>abbonamento</option><option>ospite</option><option>staff</option></select>
+      <select class="form-select mb-2" name="card_type"><option>nominale</option><option>abbonamento</option><option>ospite</option><option>staff</option></select>
       <select class="form-select mb-2" name="status"><option>attiva</option><option>chiusa</option><option>bloccata</option><option>smarrita</option></select>
       <input class="form-control mb-2" name="expires_at" type="datetime-local">
       <textarea class="form-control" name="notes" placeholder="Note"></textarea>

@@ -39,7 +39,7 @@ CREATE TABLE cards (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   card_code VARCHAR(64) NOT NULL UNIQUE,
   customer_id INT UNSIGNED NOT NULL,
-  card_type ENUM('giornaliera','abbonamento','ospite','staff') NOT NULL DEFAULT 'giornaliera',
+  card_type ENUM('nominale','abbonamento','ospite','staff') NOT NULL DEFAULT 'nominale',
   status ENUM('attiva','chiusa','bloccata','smarrita') NOT NULL DEFAULT 'attiva',
   activated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   expires_at DATETIME NULL,

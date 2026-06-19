@@ -54,5 +54,5 @@ INSERT INTO customers (first_name, last_name, phone, email, privacy_consent) VAL
 ('Laura', 'Bianchi', '3332223333', 'laura.bianchi@example.test', 1);
 
 INSERT INTO cards (card_code, customer_id, card_type, status) VALUES
-('CARD001', 1, 'giornaliera', 'attiva'),
-('CARD002', 2, 'giornaliera', 'attiva');
+('CARD001', 1, 'nominale', 'attiva'),
+('CARD002', 2, 'nominale', 'attiva');

@@ -870,48 +870,104 @@ function cu_initials(string $first, string $last): string {
 
 <!-- ── Edit Customer Modal ─────────────────────────────────── -->
 <div class="modal fade" id="editCustomerModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Modifica cliente — <?= e($fullName) ?></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="row g-3">
-          <div class="col-md-6"><label class="form-label">Nome *</label>
-            <input class="form-control" id="ec_first_name" value="<?= e($customer['first_name']) ?>" maxlength="80"></div>
-          <div class="col-md-6"><label class="form-label">Cognome *</label>
-            <input class="form-control" id="ec_last_name" value="<?= e($customer['last_name']) ?>" maxlength="80"></div>
-          <div class="col-md-6"><label class="form-label">Telefono</label>
-            <input class="form-control" id="ec_phone" value="<?= e($customer['phone'] ?? '') ?>" maxlength="30"></div>
-          <div class="col-md-6"><label class="form-label">Email</label>
-            <input class="form-control" type="email" id="ec_email" value="<?= e($customer['email'] ?? '') ?>" maxlength="120"></div>
-          <div class="col-md-6"><label class="form-label">Codice fiscale</label>
-            <input class="form-control" id="ec_fiscal" value="<?= e($customer['fiscal_code'] ?? '') ?>" maxlength="16"></div>
-          <div class="col-md-6"><label class="form-label">Data di nascita</label>
-            <input class="form-control" type="date" id="ec_birth" value="<?= $customer['birth_date'] ? date('Y-m-d', strtotime($customer['birth_date'])) : '' ?>"></div>
-          <div class="col-12"><label class="form-label">Indirizzo</label>
-            <input class="form-control" id="ec_address" value="<?= e($customer['address'] ?? '') ?>" maxlength="200"></div>
-          <div class="col-12"><label class="form-label">Note</label>
-            <textarea class="form-control" id="ec_notes" rows="2" maxlength="500"><?= e($customer['notes'] ?? '') ?></textarea></div>
-          <div class="col-md-6"><label class="form-label">Stato</label>
-            <select class="form-select" id="ec_status">
-              <option value="attivo"    <?= $customer['status']==='attivo'    ?'selected':'' ?>>Attivo</option>
-              <option value="sospeso"   <?= $customer['status']==='sospeso'   ?'selected':'' ?>>Sospeso</option>
-              <option value="blacklist" <?= $customer['status']==='blacklist' ?'selected':'' ?>>Blacklist</option>
-            </select></div>
-          <div class="col-md-6 d-flex align-items-end">
-            <div class="form-check pb-1">
-              <input class="form-check-input" type="checkbox" id="ec_privacy" <?= $customer['privacy_consent'] ? 'checked' : '' ?>>
-              <label class="form-check-label" for="ec_privacy">Consenso privacy</label>
+        <div class="row g-4">
+
+          <!-- Colonna sinistra: foto -->
+          <div class="col-lg-3 d-flex flex-column align-items-center gap-3">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);align-self:flex-start">Foto</div>
+            <div id="ec_photo_wrap" style="width:120px;height:120px;border-radius:50%;overflow:hidden;border:3px solid var(--border);background:var(--surface-2);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+              <?php if (!empty($customer['photo_path'])): ?>
+                <img id="ec_photo_img" src="<?= url('/' . e($customer['photo_path'])) ?>" style="width:100%;height:100%;object-fit:cover">
+              <?php else: ?>
+                <span id="ec_photo_img" style="font-size:40px;color:var(--muted-2)">👤</span>
+              <?php endif; ?>
+            </div>
+            <div id="ec_webcam_box" style="display:none;width:100%;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:4/3;position:relative">
+              <video id="ec_webcam_video" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover"></video>
+            </div>
+            <div class="d-flex flex-column gap-2 w-100">
+              <button type="button" class="btn btn-sm btn-outline-primary" id="ec_btn_cam" onclick="ecStartCamera()">📷 Webcam</button>
+              <button type="button" class="btn btn-sm btn-primary d-none" id="ec_btn_snap" onclick="ecSnapPhoto()">📸 Scatta</button>
+              <label class="btn btn-sm btn-outline-secondary mb-0" style="cursor:pointer">
+                📁 Da file <input type="file" id="ec_photo_file" accept="image/*" style="display:none" onchange="ecLoadFile(this)">
+              </label>
+              <?php if (!empty($customer['photo_path'])): ?>
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="ecClearPhoto()">✕ Rimuovi foto</button>
+              <?php endif; ?>
+            </div>
+            <input type="hidden" id="ec_photo_data" value="">
+            <input type="hidden" id="ec_clear_photo" value="0">
+          </div>
+
+          <!-- Colonna destra: campi -->
+          <div class="col-lg-9">
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label">Nome *</label>
+                <input class="form-control" id="ec_first_name" value="<?= e($customer['first_name']) ?>" maxlength="80"></div>
+              <div class="col-md-6"><label class="form-label">Cognome *</label>
+                <input class="form-control" id="ec_last_name" value="<?= e($customer['last_name']) ?>" maxlength="80"></div>
+              <div class="col-md-6"><label class="form-label">Telefono</label>
+                <input class="form-control" id="ec_phone" value="<?= e($customer['phone'] ?? '') ?>" maxlength="30"></div>
+              <div class="col-md-6"><label class="form-label">Email</label>
+                <input class="form-control" type="email" id="ec_email" value="<?= e($customer['email'] ?? '') ?>" maxlength="120"></div>
+              <div class="col-md-6"><label class="form-label">Codice fiscale</label>
+                <input class="form-control" id="ec_fiscal" value="<?= e($customer['fiscal_code'] ?? '') ?>" maxlength="16" style="text-transform:uppercase"></div>
+              <div class="col-md-6"><label class="form-label">Data di nascita</label>
+                <input class="form-control" type="date" id="ec_birth" value="<?= $customer['birth_date'] ? date('Y-m-d', strtotime($customer['birth_date'])) : '' ?>"></div>
+              <div class="col-12"><label class="form-label">Indirizzo</label>
+                <input class="form-control" id="ec_address" value="<?= e($customer['address'] ?? '') ?>" maxlength="200"></div>
+              <div class="col-12"><label class="form-label">Note</label>
+                <textarea class="form-control" id="ec_notes" rows="2" maxlength="500"><?= e($customer['notes'] ?? '') ?></textarea></div>
+              <div class="col-md-6"><label class="form-label">Stato</label>
+                <select class="form-select" id="ec_status">
+                  <option value="attivo"    <?= $customer['status']==='attivo'    ?'selected':'' ?>>Attivo</option>
+                  <option value="sospeso"   <?= $customer['status']==='sospeso'   ?'selected':'' ?>>Sospeso</option>
+                  <option value="blacklist" <?= $customer['status']==='blacklist' ?'selected':'' ?>>Blacklist</option>
+                </select></div>
+              <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check pb-1">
+                  <input class="form-check-input" type="checkbox" id="ec_privacy" <?= $customer['privacy_consent'] ? 'checked' : '' ?>>
+                  <label class="form-check-label" for="ec_privacy">Consenso privacy</label>
+                </div>
+              </div>
+
+              <!-- Documento -->
+              <div class="col-12"><hr style="border-color:var(--border);margin:4px 0">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Documento d'identità</div>
+              </div>
+              <div class="col-md-6"><label class="form-label">Tipo documento</label>
+                <select class="form-select" id="ec_doc_type">
+                  <option value="">— nessuno —</option>
+                  <option value="carta_identita"   <?= ($customer['doc_type']??'')==='carta_identita'   ?'selected':'' ?>>Carta d'Identità</option>
+                  <option value="passaporto"       <?= ($customer['doc_type']??'')==='passaporto'       ?'selected':'' ?>>Passaporto</option>
+                  <option value="patente"          <?= ($customer['doc_type']??'')==='patente'          ?'selected':'' ?>>Patente</option>
+                  <option value="permesso_soggiorno" <?= ($customer['doc_type']??'')==='permesso_soggiorno' ?'selected':'' ?>>Permesso di Soggiorno</option>
+                </select></div>
+              <div class="col-md-6"><label class="form-label">Numero documento</label>
+                <input class="form-control" id="ec_doc_number" value="<?= e($customer['doc_number'] ?? '') ?>" maxlength="30" style="text-transform:uppercase"></div>
+              <div class="col-md-6"><label class="form-label">Scadenza</label>
+                <input class="form-control" type="date" id="ec_doc_expiry" value="<?= !empty($customer['doc_expiry']) ? date('Y-m-d', strtotime($customer['doc_expiry'])) : '' ?>"></div>
+              <div class="col-md-6"><label class="form-label">Rilasciato da</label>
+                <input class="form-control" id="ec_doc_issuer" value="<?= e($customer['doc_issuer'] ?? '') ?>" maxlength="100"></div>
             </div>
           </div>
+
         </div>
         <div id="ec_error" class="alert alert-danger mt-3 d-none"></div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-        <button type="button" class="btn btn-primary" onclick="saveCustomer()">Salva modifiche</button>
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteCustomer()">🗑 Elimina cliente</button>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+          <button type="button" class="btn btn-primary" onclick="saveCustomer()">Salva modifiche</button>
+        </div>
       </div>
     </div>
   </div>
@@ -993,10 +1049,12 @@ function cu_initials(string $first, string $last): string {
 <div id="cu-toast"></div>
 
 <script>
-const CSRF            = <?= json_encode(csrf_token()) ?>;
-const UPD_CUSTOMER_URL = '<?= url('/api/customers/update.php') ?>';
-const UPD_CARD_URL     = '<?= url('/api/customers/update-card.php') ?>';
-const CUSTOMER_ID      = <?= isset($customer) ? (int)$customer['id'] : 'null' ?>;
+const CSRF              = <?= json_encode(csrf_token()) ?>;
+const UPD_CUSTOMER_URL  = '<?= url('/api/customers/update.php') ?>';
+const DEL_CUSTOMER_URL  = '<?= url('/api/customers/delete.php') ?>';
+const UPD_CARD_URL      = '<?= url('/api/customers/update-card.php') ?>';
+const CUSTOMER_ID       = <?= isset($customer) ? (int)$customer['id'] : 'null' ?>;
+var _ecCameraStream     = null;
 
 /* Toast */
 var _toTimer;
@@ -1039,17 +1097,24 @@ function saveCustomer() {
     errEl.textContent = 'Nome e cognome obbligatori.';
     errEl.classList.remove('d-none'); return;
   }
+  ecStopCamera();
   fetch(UPD_CUSTOMER_URL, { method:'POST', body: new URLSearchParams({
     _csrf: CSRF, id: CUSTOMER_ID,
     first_name: fname, last_name: lname,
-    phone:    document.getElementById('ec_phone').value,
-    email:    document.getElementById('ec_email').value,
-    fiscal_code: document.getElementById('ec_fiscal').value,
-    birth_date:  document.getElementById('ec_birth').value,
-    address:     document.getElementById('ec_address').value,
-    notes:       document.getElementById('ec_notes').value,
-    status:      document.getElementById('ec_status').value,
+    phone:        document.getElementById('ec_phone').value,
+    email:        document.getElementById('ec_email').value,
+    fiscal_code:  document.getElementById('ec_fiscal').value,
+    birth_date:   document.getElementById('ec_birth').value,
+    address:      document.getElementById('ec_address').value,
+    notes:        document.getElementById('ec_notes').value,
+    status:       document.getElementById('ec_status').value,
     privacy_consent: document.getElementById('ec_privacy').checked ? '1' : '0',
+    doc_type:     document.getElementById('ec_doc_type').value,
+    doc_number:   document.getElementById('ec_doc_number').value,
+    doc_expiry:   document.getElementById('ec_doc_expiry').value,
+    doc_issuer:   document.getElementById('ec_doc_issuer').value,
+    photo_data:   document.getElementById('ec_photo_data').value,
+    clear_photo:  document.getElementById('ec_clear_photo').value,
   })}).then(function(r) { return r.json(); }).then(function(resp) {
     if (resp.success) {
       bootstrap.Modal.getInstance(document.getElementById('editCustomerModal')).hide();
@@ -1060,6 +1125,78 @@ function saveCustomer() {
       errEl.classList.remove('d-none');
     }
   }).catch(function() { errEl.textContent = 'Errore di rete.'; errEl.classList.remove('d-none'); });
+}
+
+/* Delete customer */
+function deleteCustomer() {
+  if (!confirm('Eliminare definitivamente questo cliente?\nLe card verranno chiuse. Operazione non reversibile.')) return;
+  fetch(DEL_CUSTOMER_URL, { method:'POST', body: new URLSearchParams({ _csrf: CSRF, id: CUSTOMER_ID }) })
+  .then(function(r) { return r.json(); }).then(function(resp) {
+    if (resp.success) {
+      window.location.href = '<?= url('/customers') ?>';
+    } else {
+      alert('Impossibile eliminare: ' + (resp.error || 'Errore.'));
+    }
+  }).catch(function() { alert('Errore di rete.'); });
+}
+
+/* Webcam nel modal modifica */
+function ecStartCamera() {
+  if (!navigator.mediaDevices) { alert('Webcam non disponibile (serve HTTPS).'); return; }
+  navigator.mediaDevices.getUserMedia({ video: { width:320, height:240, facingMode:'user' } })
+  .then(function(stream) {
+    _ecCameraStream = stream;
+    var v = document.getElementById('ec_webcam_video');
+    v.srcObject = stream; v.play();
+    document.getElementById('ec_webcam_box').style.display = '';
+    document.getElementById('ec_btn_cam').classList.add('d-none');
+    document.getElementById('ec_btn_snap').classList.remove('d-none');
+  }).catch(function(e) { alert('Webcam: ' + e.message); });
+}
+
+function ecSnapPhoto() {
+  var v = document.getElementById('ec_webcam_video');
+  var c = document.createElement('canvas');
+  c.width = v.videoWidth || 320; c.height = v.videoHeight || 240;
+  c.getContext('2d').drawImage(v, 0, 0);
+  var data = c.toDataURL('image/jpeg', 0.85);
+  document.getElementById('ec_photo_data').value = data;
+  document.getElementById('ec_clear_photo').value = '0';
+  var img = document.getElementById('ec_photo_img');
+  img.src = data; img.style = 'width:100%;height:100%;object-fit:cover';
+  document.getElementById('ec_webcam_box').style.display = 'none';
+  document.getElementById('ec_btn_snap').classList.add('d-none');
+  document.getElementById('ec_btn_cam').classList.remove('d-none');
+  document.getElementById('ec_btn_cam').textContent = '↺ Riprendi';
+  ecStopCamera();
+}
+
+function ecLoadFile(input) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var data = e.target.result;
+    document.getElementById('ec_photo_data').value = data;
+    document.getElementById('ec_clear_photo').value = '0';
+    var img = document.getElementById('ec_photo_img');
+    img.src = data; img.style = 'width:100%;height:100%;object-fit:cover';
+  };
+  reader.readAsDataURL(file);
+}
+
+function ecClearPhoto() {
+  document.getElementById('ec_photo_data').value = '';
+  document.getElementById('ec_clear_photo').value = '1';
+  var img = document.getElementById('ec_photo_img');
+  img.src = ''; img.style = 'font-size:40px;color:var(--muted-2)';
+  img.textContent = '👤';
+}
+
+function ecStopCamera() {
+  if (_ecCameraStream) { _ecCameraStream.getTracks().forEach(function(t){t.stop();}); _ecCameraStream = null; }
+  document.getElementById('ec_webcam_box').style.display = 'none';
+  document.getElementById('ec_btn_snap').classList.add('d-none');
+  document.getElementById('ec_btn_cam').classList.remove('d-none');
 }
 
 /* Edit card */

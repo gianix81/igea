@@ -93,6 +93,31 @@ try {
             audit_log('create', 'customer', (int) db()->lastInsertId(), $_POST);
             redirect('/customers');
         }
+        // Detail view when ?id= is present
+        $customerId = (int) request_input('id', 0);
+        if ($customerId > 0) {
+            $pdo = db();
+            $stmt = $pdo->prepare("SELECT * FROM customers WHERE id = ?");
+            $stmt->execute([$customerId]);
+            $customer = $stmt->fetch();
+            if (!$customer) redirect('/customers');
+            $stmt = $pdo->prepare("SELECT * FROM cards WHERE customer_id = ? ORDER BY created_at DESC");
+            $stmt->execute([$customerId]);
+            $cards = $stmt->fetchAll();
+            $selectedCard = null;
+            $movements = [];
+            $cardId = (int) request_input('card', 0);
+            if ($cardId > 0) {
+                foreach ($cards as $c) {
+                    if ((int) $c['id'] === $cardId) { $selectedCard = $c; break; }
+                }
+                if ($selectedCard) {
+                    $movements = (new BalanceService())->movements($cardId);
+                }
+            }
+            render('customers/index', compact('customer', 'cards', 'selectedCard', 'movements'));
+            exit;
+        }
         $sel  = "SELECT cu.*, COALESCE(SUM(c.current_balance),0) AS total_balance, COUNT(DISTINCT c.id) AS active_cards FROM customers cu LEFT JOIN cards c ON c.customer_id = cu.id AND c.status = 'attiva'";
         if ($q !== '') {
             $like = '%' . $q . '%';

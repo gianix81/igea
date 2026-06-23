@@ -49,7 +49,7 @@ $photoPath = null;
 if ($photoData && str_starts_with($photoData, 'data:image/')) {
     $imgData = base64_decode(preg_replace('#^data:image/\w+;base64,#', '', $photoData));
     if ($imgData !== false && strlen($imgData) > 100) {
-        $dir = __DIR__ . '/../../public/uploads/customers/';
+        $dir = is_dir(__DIR__ . '/../../public') ? __DIR__ . '/../../public/uploads/customers/' : __DIR__ . '/../../uploads/customers/';
         if (!is_dir($dir)) mkdir($dir, 0755, true);
         $fname = 'c_' . time() . '_' . bin2hex(random_bytes(4)) . '.jpg';
         file_put_contents($dir . $fname, $imgData);
@@ -62,7 +62,7 @@ $sigPath = null;
 if ($sigData && str_starts_with($sigData, 'data:image/')) {
     $sData = base64_decode(preg_replace('#^data:image/\w+;base64,#', '', $sigData));
     if ($sData !== false && strlen($sData) > 100) {
-        $dir = __DIR__ . '/../../public/uploads/signatures/';
+        $dir = is_dir(__DIR__ . '/../../public') ? __DIR__ . '/../../public/uploads/signatures/' : __DIR__ . '/../../uploads/signatures/';
         if (!is_dir($dir)) mkdir($dir, 0755, true);
         $fname = 's_' . time() . '_' . bin2hex(random_bytes(4)) . '.png';
         file_put_contents($dir . $fname, $sData);

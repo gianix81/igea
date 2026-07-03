@@ -684,7 +684,7 @@ function cu_initials(string $first, string $last): string {
         <?php if ($card['expires_at']): ?>
           <span>Scade: <?= date('d/m/Y', strtotime($card['expires_at'])) ?></span>
         <?php endif; ?>
-        <?php if ($card['last_movement']): ?>
+        <?php if (!empty($card['last_movement'])): ?>
           <span>Ult. mov.: <?= date('d/m H:i', strtotime($card['last_movement'])) ?></span>
         <?php endif; ?>
         <?php if ($card['notes']): ?>

@@ -30,7 +30,7 @@
 }
 .cv-header-icon { font-size: 16px; }
 .cv-header-title {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 13px; font-weight: 800; color: var(--text);
   text-transform: uppercase; letter-spacing: .06em;
 }
@@ -48,14 +48,14 @@
 }
 .cv-photo { width: 100%; height: 100%; object-fit: cover; }
 .cv-initials {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 36px; font-weight: 800;
   background: linear-gradient(135deg, var(--accent), #0b3e50);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 
 .cv-name {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 22px; font-weight: 800; color: var(--text);
   margin-bottom: 6px; line-height: 1.15;
 }

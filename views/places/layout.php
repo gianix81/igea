@@ -160,7 +160,7 @@ $statusColor = [
   justify-content: center;
   font-size: .68rem;
   font-weight: 700;
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   color: #fff;
   cursor: grab;
   user-select: none;

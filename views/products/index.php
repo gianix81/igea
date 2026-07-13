@@ -20,10 +20,10 @@ foreach ($categories as $c) {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
 .cat-head-title {
-  font-family:'Bricolage Grotesque',sans-serif;
+  font-family:'Poppins',sans-serif;
   font-size: 22px; font-weight: 800; color: var(--text); margin: 0;
 }
-.cat-head .spacer { flex: 1; }
+.spacer { flex: 1; }
 
 /* ── Pill tabs ────────────────────────────────────────────────── */
 .cat-tabs {
@@ -42,6 +42,7 @@ foreach ($categories as $c) {
 /* ── Filter bar ───────────────────────────────────────────────── */
 .cat-filters {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 .cat-select {
   height: 36px; padding: 0 10px; border-radius: 8px;
@@ -69,7 +70,7 @@ foreach ($categories as $c) {
 }
 .cat-search input {
   border: none; background: transparent; outline: none;
-  color: var(--text); font: 13px/1 'Figtree', sans-serif; width: 180px;
+  color: var(--text); font: 13px/1 'Inter', sans-serif; width: 180px;
 }
 .cat-search input::placeholder { color: var(--muted-2); }
 .cat-search:focus-within { border-color: var(--accent); }
@@ -159,7 +160,7 @@ foreach ($categories as $c) {
 .cat-empty .cat-empty-icon { font-size: 36px; margin-bottom: 8px; }
 
 /* price */
-.price-val { font-family:'Bricolage Grotesque',sans-serif; font-weight: 800; color: var(--text); }
+.price-val { font-family:'Poppins',sans-serif; font-weight: 800; color: var(--text); }
 
 /* ── Modal override ───────────────────────────────────────────── */
 .modal-content {
@@ -171,7 +172,7 @@ foreach ($categories as $c) {
   padding: 16px 20px;
 }
 .modal-title {
-  font-family:'Bricolage Grotesque',sans-serif;
+  font-family:'Poppins',sans-serif;
   font-size: 17px; font-weight: 800; color: var(--text);
 }
 .modal-body { padding: 20px; }
@@ -212,6 +213,7 @@ foreach ($categories as $c) {
       <button class="cat-tab"        id="tab-categories" onclick="showTab('categories')">Categorie</button>
     </div>
     <button class="btn-add" id="btnAddProduct" onclick="openProductModal()">+ Prodotto</button>
+    <button class="btn-add" id="btnAddCategory" onclick="openCategoryModal()" style="display:none">+ Categoria</button>
   </div>
 
   <!-- ══ TAB PRODOTTI ══════════════════════════════════════════ -->
@@ -219,7 +221,14 @@ foreach ($categories as $c) {
 
     <!-- Filter bar -->
     <div class="cat-filters">
-      <select class="cat-select" id="filterDept" onchange="filterProducts()">
+      <select class="cat-select" id="filterCat" data-select-only onchange="filterProducts()">
+        <option value="">Tutte le categorie</option>
+        <?php foreach ($categories as $c): ?>
+          <option value="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></option>
+        <?php endforeach; ?>
+      </select>
+
+      <select class="cat-select" id="filterDept" data-select-only onchange="filterProducts()">
         <option value="">Tutti i reparti</option>
         <?php foreach ($deptLabels as $k => $v): ?>
           <option value="<?= e($k) ?>"><?= e($v) ?></option>
@@ -251,12 +260,11 @@ foreach ($categories as $c) {
             <th class="text-end">IVA</th>
             <th class="text-center">Scorte</th>
             <th class="text-center">Stato</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
           <?php if (empty($products)): ?>
-          <tr><td colspan="8">
+          <tr><td colspan="7">
             <div class="cat-empty">
               <div class="cat-empty-icon">📦</div>
               Nessun prodotto trovato.
@@ -269,9 +277,12 @@ foreach ($categories as $c) {
             $dc   = $deptColors[$dept] ?? ['bg'=>'var(--surface-2)','ink'=>'var(--muted)'];
           ?>
           <tr class="prod-row"
+              data-cat="<?= (int)$p['category_id'] ?>"
               data-dept="<?= e($dept) ?>"
               data-active="<?= $p['active'] ? '1' : '0' ?>"
-              data-name="<?= e(mb_strtolower($p['name'])) ?>">
+              data-name="<?= e(mb_strtolower($p['name'])) ?>"
+              style="cursor:pointer"
+              onclick='editProduct(<?= json_encode($p) ?>)'>
             <td>
               <div class="prod-name"><?= e($p['name']) ?></div>
               <?php if ($p['notes']): ?>
@@ -304,12 +315,6 @@ foreach ($categories as $c) {
                 <span class="active-no">Inattivo</span>
               <?php endif; ?>
             </td>
-            <td>
-              <div class="row-actions">
-                <button class="btn-edit" onclick='editProduct(<?= json_encode($p) ?>)'>Modifica</button>
-                <button class="btn-del"  onclick="deleteProduct(<?= (int)$p['id'] ?>, <?= json_encode($p['name']) ?>)">Elimina</button>
-              </div>
-            </td>
           </tr>
           <?php endforeach; ?>
         </tbody>
@@ -320,11 +325,6 @@ foreach ($categories as $c) {
   <!-- ══ TAB CATEGORIE ════════════════════════════════════════ -->
   <div id="pane-categories" style="display:none">
 
-    <div class="cat-filters">
-      <div class="spacer"></div>
-      <button class="btn-add" onclick="openCategoryModal()">+ Categoria</button>
-    </div>
-
     <div class="cat-panel">
       <table class="cat-table">
         <thead>
@@ -332,12 +332,11 @@ foreach ($categories as $c) {
             <th>Nome</th>
             <th>Reparto</th>
             <th class="text-center">Stato</th>
-            <th></th>
           </tr>
         </thead>
         <tbody id="catTableBody">
           <?php if (empty($categories)): ?>
-          <tr><td colspan="4">
+          <tr><td colspan="3">
             <div class="cat-empty">
               <div class="cat-empty-icon">🗂️</div>
               Nessuna categoria.
@@ -347,7 +346,7 @@ foreach ($categories as $c) {
           <?php foreach ($categories as $c):
             $dc = $deptColors[$c['department']] ?? ['bg'=>'var(--surface-2)','ink'=>'var(--muted)'];
           ?>
-          <tr id="cat-row-<?= (int)$c['id'] ?>">
+          <tr id="cat-row-<?= (int)$c['id'] ?>" style="cursor:pointer" onclick='editCategory(<?= json_encode($c) ?>)'>
             <td style="font-weight:700"><?= e($c['name']) ?></td>
             <td>
               <span class="dept-chip" style="background:<?= $dc['bg'] ?>;color:<?= $dc['ink'] ?>">
@@ -360,12 +359,6 @@ foreach ($categories as $c) {
               <?php else: ?>
                 <span class="active-no">Inattiva</span>
               <?php endif; ?>
-            </td>
-            <td>
-              <div class="row-actions">
-                <button class="btn-edit" onclick='editCategory(<?= json_encode($c) ?>)'>Modifica</button>
-                <button class="btn-del"  onclick="deleteCategory(<?= (int)$c['id'] ?>, <?= json_encode($c['name']) ?>)">Elimina</button>
-              </div>
             </td>
           </tr>
           <?php endforeach; ?>
@@ -388,32 +381,40 @@ foreach ($categories as $c) {
         <input type="hidden" id="pm_id">
         <div class="row g-3">
           <div class="col-md-7">
-            <label class="form-label">Nome *</label>
-            <input type="text" class="form-control" id="pm_name" maxlength="160" required>
+            <div class="form-floating">
+              <input type="text" class="form-control" id="pm_name" maxlength="160" placeholder="Nome" required>
+              <label for="pm_name">Nome *</label>
+            </div>
           </div>
           <div class="col-md-5">
-            <label class="form-label">Categoria *</label>
-            <select class="form-select" id="pm_category_id" required>
-              <option value="">— seleziona —</option>
-              <?php foreach ($categories as $c): ?>
-                <?php if ($c['active']): ?>
-                <option value="<?= (int)$c['id'] ?>" data-dept="<?= e($c['department']) ?>">
-                  <?= e($c['name']) ?> (<?= e($deptLabels[$c['department']] ?? $c['department']) ?>)
-                </option>
-                <?php endif; ?>
-              <?php endforeach; ?>
-            </select>
+            <div class="form-floating">
+              <select class="form-select" id="pm_category_id" required>
+                <option value="">— seleziona —</option>
+                <?php foreach ($categories as $c): ?>
+                  <?php if ($c['active']): ?>
+                  <option value="<?= (int)$c['id'] ?>" data-dept="<?= e($c['department']) ?>">
+                    <?= e($c['name']) ?> (<?= e($deptLabels[$c['department']] ?? $c['department']) ?>)
+                  </option>
+                  <?php endif; ?>
+                <?php endforeach; ?>
+              </select>
+              <label for="pm_category_id">Categoria *</label>
+            </div>
           </div>
           <div class="col-md-4">
-            <label class="form-label">Prezzo (€) *</label>
-            <input type="number" class="form-control" id="pm_price" min="0" step="0.01" required>
+            <div class="form-floating">
+              <input type="number" class="form-control" id="pm_price" min="0" step="0.01" placeholder="Prezzo" required>
+              <label for="pm_price">Prezzo (€) *</label>
+            </div>
           </div>
           <div class="col-md-4">
-            <label class="form-label">IVA %</label>
-            <input type="number" class="form-control" id="pm_vat_rate" min="0" max="100" step="0.01" placeholder="Opzionale">
+            <div class="form-floating">
+              <input type="number" class="form-control" id="pm_vat_rate" min="0" max="100" step="0.01" placeholder="IVA">
+              <label for="pm_vat_rate">IVA %</label>
+            </div>
           </div>
-          <div class="col-md-4 d-flex align-items-end">
-            <div class="form-check ms-2 mb-2">
+          <div class="col-md-4 d-flex align-items-center">
+            <div class="form-check ms-2">
               <input class="form-check-input" type="checkbox" id="pm_active">
               <label class="form-check-label" for="pm_active" style="font-size:13px">Attivo</label>
             </div>
@@ -425,19 +426,24 @@ foreach ($categories as $c) {
             </div>
           </div>
           <div class="col-md-4" id="pm_stock_qty_wrap" style="display:none">
-            <label class="form-label">Quantità in magazzino</label>
-            <input type="number" class="form-control" id="pm_stock_qty" min="0" step="0.01">
+            <div class="form-floating">
+              <input type="number" class="form-control" id="pm_stock_qty" min="0" step="0.01" placeholder="Quantità">
+              <label for="pm_stock_qty">Quantità in magazzino</label>
+            </div>
           </div>
           <div class="col-12">
-            <label class="form-label">Note</label>
-            <textarea class="form-control" id="pm_notes" rows="2" maxlength="500"></textarea>
+            <div class="form-floating">
+              <textarea class="form-control" id="pm_notes" maxlength="500" placeholder="Note" style="height:90px"></textarea>
+              <label for="pm_notes">Note</label>
+            </div>
           </div>
         </div>
         <div id="pm_error" class="alert alert-danger mt-3 d-none" style="font-size:13px;border-radius:9px"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-        <button type="button" class="btn btn-primary"   onclick="saveProduct()">Salva prodotto</button>
+        <button type="button" class="btn btn-danger" id="pm_delete_btn" style="display:none" onclick="deleteProductFromModal()">🗑 Elimina prodotto</button>
+        <button type="button" class="btn btn-primary ms-auto" onclick="saveProduct()">Salva prodotto</button>
       </div>
     </div>
   </div>
@@ -473,7 +479,8 @@ foreach ($categories as $c) {
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-        <button type="button" class="btn btn-primary"   onclick="saveCategory()">Salva categoria</button>
+        <button type="button" class="btn btn-danger" id="cm_delete_btn" style="display:none" onclick="deleteCategoryFromModal()">🗑 Elimina categoria</button>
+        <button type="button" class="btn btn-primary ms-auto" onclick="saveCategory()">Salva categoria</button>
       </div>
     </div>
   </div>
@@ -496,15 +503,18 @@ function showTab(tab) {
   document.getElementById('tab-products').classList.toggle('active',   isProd);
   document.getElementById('tab-categories').classList.toggle('active', !isProd);
   document.getElementById('btnAddProduct').style.display = isProd ? '' : 'none';
+  document.getElementById('btnAddCategory').style.display = isProd ? 'none' : '';
 }
 
 /* ── Filter prodotti ─────────────────────────────────────────── */
 function filterProducts() {
+  const cat    = document.getElementById('filterCat').value;
   const dept   = document.getElementById('filterDept').value;
   const active = document.getElementById('filterActive').checked;
   const q      = document.getElementById('searchProd').value.toLowerCase().trim();
   document.querySelectorAll('.prod-row').forEach(function (tr) {
-    const ok = (!dept   || tr.dataset.dept   === dept)
+    const ok = (!cat    || tr.dataset.cat    === cat)
+            && (!dept   || tr.dataset.dept   === dept)
             && (!active || tr.dataset.active  === '1')
             && (!q      || tr.dataset.name.includes(q));
     tr.style.display = ok ? '' : 'none';
@@ -515,7 +525,7 @@ function filterProducts() {
 function openProductModal(data) {
   document.getElementById('pm_id').value            = data ? data.id    : '';
   document.getElementById('pm_name').value          = data ? data.name  : '';
-  document.getElementById('pm_category_id').value   = data ? data.category_id : '';
+  setSelectValue('pm_category_id', data ? data.category_id : '');
   document.getElementById('pm_price').value         = data ? data.price : '';
   document.getElementById('pm_vat_rate').value      = data && data.vat_rate !== null ? data.vat_rate : '';
   document.getElementById('pm_active').checked      = data ? !!parseInt(data.active) : true;
@@ -524,10 +534,23 @@ function openProductModal(data) {
   document.getElementById('pm_notes').value         = data ? (data.notes || '') : '';
   document.getElementById('pm_error').classList.add('d-none');
   document.getElementById('productModalTitle').textContent = data ? 'Modifica prodotto' : 'Nuovo prodotto';
+  // Delete button only when editing an existing product
+  var delBtn = document.getElementById('pm_delete_btn');
+  delBtn.style.display = data ? '' : 'none';
+  delBtn.dataset.name = data ? data.name : '';
   toggleStock();
   new bootstrap.Modal(document.getElementById('productModal')).show();
 }
 function editProduct(data) { openProductModal(data); }
+
+function deleteProductFromModal() {
+  var id   = document.getElementById('pm_id').value;
+  var name = document.getElementById('pm_delete_btn').dataset.name || '';
+  if (!id) return;
+  deleteProduct(id, name, function () {
+    bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
+  });
+}
 
 function toggleStock() {
   document.getElementById('pm_stock_qty_wrap').style.display =
@@ -570,11 +593,12 @@ function saveProduct() {
   });
 }
 
-function deleteProduct(id, name) {
+function deleteProduct(id, name, onOk) {
   if (!confirm('Eliminare il prodotto "' + name + '"?\nSe ha uno storico movimenti verrà solo disattivato.')) return;
   fetch(DEL_PROD_URL, { method: 'POST', body: new URLSearchParams({ _csrf: CSRF, id }) })
   .then(r => r.json()).then(function (resp) {
     if (resp.success) {
+      if (onOk) onOk();
       toast(resp.soft ? name + ' disattivato (ha storico).' : name + ' eliminato.');
       setTimeout(function () { location.reload(); }, 500);
     } else {
@@ -587,13 +611,25 @@ function deleteProduct(id, name) {
 function openCategoryModal(data) {
   document.getElementById('cm_id').value         = data ? data.id         : '';
   document.getElementById('cm_name').value       = data ? data.name       : '';
-  document.getElementById('cm_department').value = data ? data.department : 'bar';
+  setSelectValue('cm_department', data ? data.department : 'bar');
   document.getElementById('cm_active').checked   = data ? !!parseInt(data.active) : true;
   document.getElementById('cm_error').classList.add('d-none');
   document.getElementById('categoryModalTitle').textContent = data ? 'Modifica categoria' : 'Nuova categoria';
+  var delBtn = document.getElementById('cm_delete_btn');
+  delBtn.style.display = data ? '' : 'none';
+  delBtn.dataset.name = data ? data.name : '';
   new bootstrap.Modal(document.getElementById('categoryModal')).show();
 }
 function editCategory(data) { openCategoryModal(data); }
+
+function deleteCategoryFromModal() {
+  var id   = document.getElementById('cm_id').value;
+  var name = document.getElementById('cm_delete_btn').dataset.name || '';
+  if (!id) return;
+  deleteCategory(id, name, function () {
+    bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
+  });
+}
 
 function saveCategory() {
   const name  = document.getElementById('cm_name').value.trim();
@@ -623,11 +659,12 @@ function saveCategory() {
   });
 }
 
-function deleteCategory(id, name) {
+function deleteCategory(id, name, onOk) {
   if (!confirm('Eliminare la categoria "' + name + '"?\nImpossibile se contiene prodotti.')) return;
   fetch(DEL_CAT_URL, { method: 'POST', body: new URLSearchParams({ _csrf: CSRF, id }) })
   .then(r => r.json()).then(function (resp) {
     if (resp.success) {
+      if (onOk) onOk();
       toast(name + ' eliminata.');
       setTimeout(function () { location.reload(); }, 500);
     } else {

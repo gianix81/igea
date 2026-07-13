@@ -30,12 +30,12 @@ body.db-active main.app {
   flex-shrink: 0;
 }
 .db-greeting-name {
-  font-family:'Bricolage Grotesque',sans-serif;
+  font-family:'Poppins',sans-serif;
   font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.1;
 }
 .db-greeting-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .db-clock {
-  font-family:'Bricolage Grotesque',sans-serif;
+  font-family:'Poppins',sans-serif;
   font-size: 44px; font-weight: 800; color: var(--accent); letter-spacing: -.02em;
 }
 
@@ -61,12 +61,12 @@ body.db-active main.app {
 
 .db-tile-head  { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .db-tile-icon  { font-size:26px; }
-.db-tile-title { font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; color:#fff; }
+.db-tile-title { font-family:'Poppins',sans-serif; font-size:20px; font-weight:800; color:#fff; }
 
 .db-tile-stats { display:flex; }
 .db-tile-stat  { flex:1; text-align:center; padding:0 6px; border-left:1px solid rgba(255,255,255,.13); }
 .db-tile-stat:first-child { border-left:none; padding-left:0; }
-.db-tile-stat-v { font-family:'Bricolage Grotesque',sans-serif; font-size:30px; font-weight:800; color:#fff; line-height:1; }
+.db-tile-stat-v { font-family:'Poppins',sans-serif; font-size:30px; font-weight:800; color:#fff; line-height:1; }
 .db-tile-stat-l { font-size:11px; font-weight:700; color:rgba(255,255,255,.65); text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
 .db-tile-cta { margin-top:10px; font-size:11px; font-weight:700; color:rgba(255,255,255,.5); transition:color .15s; }
 .db-tile:hover .db-tile-cta { color:rgba(255,255,255,.9); }
@@ -94,8 +94,8 @@ body.db-active main.app {
 /* ── Accesso rapido (sinistra) ────────────────────────────── */
 .db-qa {
   flex: 1; min-height: 0;
-  display: flex; flex-direction: column; justify-content: space-between;
-  gap: 0;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  gap: 8px;
 }
 .db-qa-group { display: flex; flex-direction: column; gap: 4px; }
 .db-qa-section {
@@ -106,7 +106,8 @@ body.db-active main.app {
   display:flex; align-items:center; gap:10px; padding:12px 12px;
   border-radius:9px; background:var(--surface-2); border:1px solid var(--border);
   text-decoration:none; color:var(--text); font-size:14px; font-weight:700;
-  transition:border-color .12s,color .12s,background .12s; flex-shrink:0;
+  transition:border-color .12s,color .12s,background .12s;
+  flex:1 1 0; min-height:46px;
 }
 .db-qa-item:hover { border-color:var(--accent); color:var(--accent); background:color-mix(in srgb, var(--accent) 6%, var(--surface)); }
 .db-qa-icon { font-size:19px; width:24px; text-align:center; flex-shrink:0; }
@@ -139,7 +140,7 @@ body.db-active main.app {
 }
 .db-w-icon  { font-size:50px; line-height:1; flex-shrink:0; }
 .db-w-main  { flex:1; min-width:0; }
-.db-w-temp  { font-family:'Bricolage Grotesque',sans-serif; font-size:38px; font-weight:800; color:var(--text); line-height:1; }
+.db-w-temp  { font-family:'Poppins',sans-serif; font-size:38px; font-weight:800; color:var(--text); line-height:1; }
 .db-w-desc  { font-size:12px; color:var(--muted); margin-top:2px; }
 .db-w-loc   { font-size:10px; color:var(--muted-2); margin-top:2px; }
 .db-w-meta  { display:flex; flex-direction:column; gap:4px; align-items:flex-end; font-size:11px; color:var(--muted-2); font-weight:600; flex-shrink:0; }
@@ -160,7 +161,7 @@ body.db-active main.app {
 }
 .db-cal-nav-btn:hover { border-color:var(--accent); color:var(--accent); }
 .db-cal-month-lbl {
-  font-family:'Bricolage Grotesque',sans-serif; font-size:16px; font-weight:800; color:var(--text);
+  font-family:'Poppins',sans-serif; font-size:16px; font-weight:800; color:var(--text);
 }
 .db-cal-grid {
   flex:1; min-height:0;
@@ -189,7 +190,7 @@ body.db-active main.app {
   <!-- ROW 1: Greeting -->
   <div class="db-greeting">
     <div>
-      <div class="db-greeting-name"><?= e($saluto . ($firstName ? ', ' . $firstName : '')) ?></div>
+      <div class="db-greeting-name"><?= e($saluto . ($firstName ? ' ' . $firstName : '')) ?></div>
       <div class="db-greeting-date"><?= e($oggi) ?></div>
     </div>
     <div class="db-clock" id="db_clock"><?= date('H:i') ?></div>
@@ -264,38 +265,21 @@ body.db-active main.app {
     <div class="db-panel">
       <div class="db-panel-lbl">Accesso rapido</div>
       <div class="db-qa">
-
-        <div class="db-qa-group">
-          <div class="db-qa-section">Clienti &amp; Card</div>
-          <a class="db-qa-item" href="<?= url('/customers/register') ?>">
-            <span class="db-qa-icon">👤</span><span class="db-qa-lbl">Nuovo cliente</span><span class="db-qa-arr">›</span>
-          </a>
-        </div>
-
-        <div class="db-qa-group">
-          <div class="db-qa-section">Piscina</div>
-          <a class="db-qa-item" href="<?= url('/entries') ?>">
-            <span class="db-qa-icon">🚪</span><span class="db-qa-lbl">Reception</span><span class="db-qa-arr">›</span>
-          </a>
-        </div>
-
-        <div class="db-qa-group">
-          <div class="db-qa-section">Bar &amp; Risto</div>
-          <a class="db-qa-item" href="<?= url('/bar') ?>">
-            <span class="db-qa-icon">🍹</span><span class="db-qa-lbl">Consumazioni</span><span class="db-qa-arr">›</span>
-          </a>
-          <a class="db-qa-item" href="<?= url('/cashdesk') ?>" style="margin-top:4px">
-            <span class="db-qa-icon">💰</span><span class="db-qa-lbl">Cassa</span><span class="db-qa-arr">›</span>
-          </a>
-        </div>
-
-        <div class="db-qa-group">
-          <div class="db-qa-section">Gestione</div>
-          <a class="db-qa-item" href="<?= url('/reports') ?>">
-            <span class="db-qa-icon">📊</span><span class="db-qa-lbl">Report</span><span class="db-qa-arr">›</span>
-          </a>
-        </div>
-
+        <a class="db-qa-item" href="<?= url('/customers/register') ?>">
+          <span class="db-qa-icon">👤</span><span class="db-qa-lbl">Nuovo cliente</span><span class="db-qa-arr">›</span>
+        </a>
+        <a class="db-qa-item" href="<?= url('/entries') ?>">
+          <span class="db-qa-icon">🚪</span><span class="db-qa-lbl">Reception</span><span class="db-qa-arr">›</span>
+        </a>
+        <a class="db-qa-item" href="<?= url('/bar') ?>">
+          <span class="db-qa-icon">🍹</span><span class="db-qa-lbl">Consumazioni</span><span class="db-qa-arr">›</span>
+        </a>
+        <a class="db-qa-item" href="<?= url('/cashdesk') ?>">
+          <span class="db-qa-icon">💰</span><span class="db-qa-lbl">Cassa</span><span class="db-qa-arr">›</span>
+        </a>
+        <a class="db-qa-item" href="<?= url('/reports') ?>">
+          <span class="db-qa-icon">📊</span><span class="db-qa-lbl">Report</span><span class="db-qa-arr">›</span>
+        </a>
       </div>
     </div>
 

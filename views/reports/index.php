@@ -72,7 +72,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
   display: flex; flex-direction: column; gap: 4px;
 }
 .rp-kpi-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
-.rp-kpi-value { font-family:'Bricolage Grotesque',sans-serif; font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; }
+.rp-kpi-value { font-family:'Poppins',sans-serif; font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; }
 .rp-kpi-value.accent { color: var(--accent); }
 .rp-kpi-value.good   { color: var(--good); }
 .rp-kpi-value.warn   { color: var(--warn); }
@@ -87,7 +87,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
   border-radius: 13px; padding: 16px 18px;
 }
 .rp-chart-title {
-  font-family:'Bricolage Grotesque',sans-serif;
+  font-family:'Poppins',sans-serif;
   font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 14px;
 }
 .rp-chart-canvas { width: 100% !important; }
@@ -110,7 +110,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
   border-radius: 13px; overflow: hidden;
 }
 .rp-panel-hd {
-  padding: 12px 14px; font-family:'Bricolage Grotesque',sans-serif;
+  padding: 12px 14px; font-family:'Poppins',sans-serif;
   font-size: 13px; font-weight: 800; color: var(--text);
   border-bottom: 1px solid var(--border); background: var(--surface-2);
   display: flex; align-items: center; gap: 8px;
@@ -120,9 +120,9 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
 .rp-table td { padding: 10px 12px; color: var(--text); border-bottom: 1px solid var(--border); }
 .rp-table tbody tr:last-child td { border-bottom: none; }
 .rp-table tbody tr:hover td { background: color-mix(in srgb, var(--accent) 4%, var(--surface)); }
-.rp-table .num  { text-align: right; font-weight: 700; font-family:'Bricolage Grotesque',sans-serif; }
+.rp-table .num  { text-align: right; font-weight: 700; font-family:'Poppins',sans-serif; }
 .rp-table .bold { font-weight: 700; }
-.rp-table tfoot td { font-weight: 800; border-top: 2px solid var(--border); color: var(--accent); font-family:'Bricolage Grotesque',sans-serif; }
+.rp-table tfoot td { font-weight: 800; border-top: 2px solid var(--border); color: var(--accent); font-family:'Poppins',sans-serif; }
 
 .dept-pill {
   display: inline-block; font-size: 9.5px; font-weight: 800;
@@ -372,7 +372,7 @@ var textCol = style.getPropertyValue('--text').trim()    || '#0f2730';
 
 Chart.defaults.color      = muted;
 Chart.defaults.borderColor = border;
-Chart.defaults.font.family = "'Figtree', sans-serif";
+Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.font.size   = 11;
 
 /* ── Trend giornaliero ───────────────────────────────── */

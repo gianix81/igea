@@ -9,7 +9,7 @@ $saldo     = max(0, $consTot - ($paidTotal ?? 0));
 .sc-wrap { padding: 20px 22px; }
 
 .sc-page-head  { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-.sc-page-title { font-family:'Bricolage Grotesque',sans-serif; font-size:22px; font-weight:800; color:var(--text); }
+.sc-page-title { font-family:'Poppins',sans-serif; font-size:22px; font-weight:800; color:var(--text); }
 .sc-count-badge {
   padding:3px 10px; border-radius:20px;
   background:color-mix(in srgb, var(--accent) 15%, transparent);
@@ -101,14 +101,14 @@ $saldo     = max(0, $consTot - ($paidTotal ?? 0));
 .sc-back:hover { border-color:var(--accent); color:var(--accent); }
 
 .sc-detail-head { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
-.sc-detail-name { font-family:'Bricolage Grotesque',sans-serif; font-size:22px; font-weight:800; color:var(--text); }
+.sc-detail-name { font-family:'Poppins',sans-serif; font-size:22px; font-weight:800; color:var(--text); }
 .sc-detail-meta { font-size:12px; color:var(--muted); margin-left:auto; }
 
 /* KPI */
 .sc-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
 .sc-kpi { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
 .sc-kpi-label { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--muted-2); margin-bottom:5px; }
-.sc-kpi-value { font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; }
+.sc-kpi-value { font-family:'Poppins',sans-serif; font-size:20px; font-weight:800; }
 .sc-kpi.kpi-bar    .sc-kpi-value { color:#17b3c4; }
 .sc-kpi.kpi-risto  .sc-kpi-value { color:#e8a020; }
 .sc-kpi.kpi-acconti .sc-kpi-value { color:var(--text); }
@@ -163,7 +163,7 @@ $saldo     = max(0, $consTot - ($paidTotal ?? 0));
 .modal-header.bar-hd   { background:color-mix(in srgb,#17b3c4 15%,var(--surface)); }
 .modal-header.risto-hd { background:color-mix(in srgb,#e8a020 15%,var(--surface)); }
 .modal-header.danger-hd { background:color-mix(in srgb, var(--bad) 15%, var(--surface)); }
-.modal-title { font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:16px; color:var(--text); }
+.modal-title { font-family:'Poppins',sans-serif; font-weight:800; font-size:16px; color:var(--text); }
 .modal-body   { padding:18px; background:var(--surface); }
 .modal-footer { border-top:1px solid var(--border); padding:12px 18px; background:var(--surface); gap:8px; }
 .btn-close { filter:var(--btn-close-filter, none); }
@@ -181,7 +181,7 @@ $saldo     = max(0, $consTot - ($paidTotal ?? 0));
 
 .sc-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
 .sc-total-block { display:flex; flex-direction:column; justify-content:flex-end; }
-.sc-total-preview { font-family:'Bricolage Grotesque',sans-serif; font-size:26px; font-weight:800; color:var(--accent); }
+.sc-total-preview { font-family:'Poppins',sans-serif; font-size:26px; font-weight:800; color:var(--accent); }
 .sc-total-lbl { font-size:10px; color:var(--muted-2); margin-bottom:2px; }
 
 .sc-prod-btns { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
@@ -211,7 +211,7 @@ $saldo     = max(0, $consTot - ($paidTotal ?? 0));
   border-radius:12px; padding:14px; margin-bottom:16px; text-align:center;
 }
 .sc-chiudi-summary-lbl { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--muted-2); margin-bottom:4px; }
-.sc-chiudi-summary-val { font-family:'Bricolage Grotesque',sans-serif; font-size:18px; font-weight:800; color:var(--text); }
+.sc-chiudi-summary-val { font-family:'Poppins',sans-serif; font-size:18px; font-weight:800; color:var(--text); }
 .sc-chiudi-summary-val.warn { color:var(--warn); }
 
 .sc-warn-box {
@@ -718,7 +718,7 @@ function stornaConsumazione(movId, desc) {
 // ── Acconto modal ─────────────────────────────────────────
 function openAccontoModal() {
   document.getElementById('acc_amount').value = '';
-  document.getElementById('acc_method').value = 'contanti';
+  setSelectValue('acc_method', 'contanti');
   document.getElementById('acc_note').value   = '';
   var errEl = document.getElementById('acc_error');
   errEl.classList.remove('visible'); errEl.textContent = '';
@@ -762,7 +762,7 @@ function openChiudiModal() {
   document.getElementById('chiudi_acconti').textContent = '€ ' + PAID_TOTAL.toFixed(2).replace('.', ',');
   document.getElementById('chiudi_residuo').textContent = '€ ' + saldo.toFixed(2).replace('.', ',');
   document.getElementById('chiudi_amount').value        = saldo > 0 ? saldo.toFixed(2) : '0';
-  document.getElementById('chiudi_method').value        = 'contanti';
+  setSelectValue('chiudi_method', 'contanti');
   document.getElementById('chiudi_note').value          = '';
   var errEl = document.getElementById('chiudi_error');
   errEl.classList.remove('visible'); errEl.textContent = '';

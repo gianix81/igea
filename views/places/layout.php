@@ -29,6 +29,14 @@ $statusColor = [
     'manutenzione' => '#888',
     'bloccato'    => '#444',
 ];
+
+// Colore stabile per area (stesso id → stesso colore ad ogni caricamento),
+// usato per distinguere a colpo d'occhio le aree nella griglia.
+$areaPalette = ['#7c5cff', '#e8547c', '#2f9e72', '#e8a020', '#17b3c4', '#c0392b', '#8e6b3f', '#5470c6'];
+$areaColor   = [];
+foreach ($poolAreas as $a) {
+    $areaColor[(int) $a['id']] = $areaPalette[(int) $a['id'] % count($areaPalette)];
+}
 ?>
 
 <style>
@@ -78,6 +86,7 @@ $statusColor = [
   flex-wrap: wrap;
 }
 .le-dot { display:inline-block; width:10px; height:10px; border-radius:2px; }
+.le-legend-lbl { font-weight:700; color: var(--text); margin-right: 2px; }
 .le-size-ctrl {
   display: flex;
   align-items: center;
@@ -142,6 +151,19 @@ $statusColor = [
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   opacity: 1;
 }
+.le-cell.empty { cursor: pointer; }
+.le-cell.empty:hover {
+  border-color: var(--accent);
+  opacity: 1;
+}
+.le-cell.empty::after {
+  content: '+';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: var(--accent);
+  opacity: 0;
+}
+.le-cell.empty:hover::after { opacity: .8; }
 .le-cell.has-seat { border-color: transparent; }
 
 .le-seat {
@@ -173,15 +195,14 @@ $statusColor = [
   line-height: 1;
   text-align: center;
 }
-.le-del-btn {
+.le-del-btn, .le-edit-btn {
   position: absolute;
-  top: -5px; right: -5px;
+  top: -5px;
   width: 15px; height: 15px;
   border-radius: 50%;
-  background: #d9534f;
   color: #fff;
   border: none;
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1;
   cursor: pointer;
   display: none;
@@ -191,7 +212,10 @@ $statusColor = [
   padding: 0;
   font-weight: 700;
 }
-.le-seat:hover .le-del-btn { display: flex; }
+.le-del-btn  { right: -5px; background: #d9534f; }
+.le-edit-btn { left: -5px; background: #2f6fd9; }
+.le-seat:hover .le-del-btn, .le-seat:hover .le-edit-btn,
+.le-unpos-seat:hover .le-del-btn, .le-unpos-seat:hover .le-edit-btn { display: flex; }
 
 /* Unpositioned pool */
 .le-unpos-zone {
@@ -226,6 +250,35 @@ $statusColor = [
   cursor: grab;
   border: none;
 }
+
+/* Modal aggiungi/modifica lettino */
+.le-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; z-index: 500;
+}
+.le-modal {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  width: 320px; max-width: 92vw; box-shadow: 0 12px 40px rgba(0,0,0,.3);
+}
+.le-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  font-weight: 700; font-size: .9rem; color: var(--text);
+}
+.le-modal-close { background: none; border: none; font-size: 18px; color: var(--muted-2); cursor: pointer; line-height: 1; }
+.le-modal form { padding: 14px 16px; }
+.le-modal-field { margin-bottom: 10px; }
+.le-modal-field label { display: block; font-size: .72rem; font-weight: 700; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .04em; }
+.le-modal-field input, .le-modal-field select {
+  width: 100%; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--text); font-size: .85rem; font-family: inherit; box-sizing: border-box;
+}
+.le-modal-err { color: var(--bad, #d9534f); font-size: .78rem; margin-bottom: 8px; }
+.le-modal-actions { display: flex; gap: 8px; margin-top: 4px; }
+.le-modal-actions button { flex: 1; padding: 8px; border-radius: 8px; border: none; font-weight: 700; font-size: .82rem; cursor: pointer; font-family: inherit; }
+.le-modal-cancel { background: var(--surface-2); color: var(--text); }
+.le-modal-save   { background: var(--accent); color: var(--accent-ink); }
+.le-modal-delete { background: transparent; color: var(--bad, #d9534f); border: 1.5px solid var(--bad, #d9534f) !important; }
 
 /* Toast feedback */
 .le-toast {
@@ -266,7 +319,14 @@ $statusColor = [
       <span class="le-dot" style="background:#888"></span>Manut./Bloccato
     </div>
 
-    <span class="le-hint">⟵ trascina i lettini per riposizionarli</span>
+    <div class="le-legend le-legend-areas">
+      <span class="le-legend-lbl">Aree:</span>
+      <?php foreach ($poolAreas as $a): ?>
+        <span class="le-dot" style="background:<?= $areaColor[(int) $a['id']] ?>"></span><?= e($a['name']) ?>
+      <?php endforeach; ?>
+    </div>
+
+    <span class="le-hint">⟵ trascina per spostare · clicca un lettino per modificarlo · clicca una cella vuota per aggiungerne uno</span>
 
     <div class="le-size-ctrl">
       <span class="le-sz-lbl">Largh.</span>
@@ -287,20 +347,28 @@ $statusColor = [
           <?php for ($c = 0; $c < $N_COLS; $c++): ?>
             <?php $seat = $grid[$r][$c] ?? null; ?>
             <div class="le-cell <?= $seat ? 'has-seat' : 'empty' ?>"
-                 data-row="<?= $r ?>" data-col="<?= $c ?>">
+                 data-row="<?= $r ?>" data-col="<?= $c ?>"
+                 <?= $seat ? '' : 'onclick="openAddModal(' . $r . ',' . $c . ')"' ?>>
               <?php if ($seat):
                 $ds = $seat['day_status'] ?? 'libero';
                 $bg = $statusColor[$ds] ?? '#1a9e6c';
+                $ac = $areaColor[(int) $seat['area_id']] ?? '#666';
                 $lbl = strlen($seat['code']) > 1 ? substr($seat['code'], 1) : $seat['code'];
               ?>
               <div class="le-seat"
                    draggable="true"
                    data-id="<?= (int)$seat['id'] ?>"
                    data-code="<?= e($seat['code']) ?>"
-                   style="background:<?= $bg ?>"
-                   title="<?= e($seat['code']) ?> · <?= e($seat['area_name']) ?>">
+                   data-area-id="<?= (int)$seat['area_id'] ?>"
+                   data-type="<?= e($seat['type']) ?>"
+                   data-price="<?= (float)$seat['base_price'] ?>"
+                   data-notes="<?= e($seat['notes'] ?? '') ?>"
+                   style="background:<?= $bg ?>;box-shadow:inset 0 3px 0 <?= $ac ?>"
+                   title="<?= e($seat['code']) ?> · <?= e($seat['area_name']) ?>"
+                   onclick="handleSeatClick(event, this)">
                 <span class="le-seat-lbl"><?= e($lbl) ?></span>
-                <button class="le-del-btn" title="Elimina" onclick="deleteSeat(<?= (int)$seat['id'] ?>,'<?= e($seat['code']) ?>')">×</button>
+                <button class="le-edit-btn" title="Modifica" onclick="event.stopPropagation();openEditModalFromEl(this.closest('.le-seat'))">✏</button>
+                <button class="le-del-btn" title="Elimina" onclick="event.stopPropagation();deleteSeat(<?= (int)$seat['id'] ?>,'<?= e($seat['code']) ?>')">×</button>
               </div>
               <?php endif; ?>
             </div>
@@ -315,15 +383,22 @@ $statusColor = [
         <div class="le-unpos-seats" id="unposPool">
           <?php foreach ($unpositioned as $p):
             $lbl = strlen($p['code']) > 1 ? substr($p['code'], 1) : $p['code'];
+            $ac  = $areaColor[(int) $p['area_id']] ?? '#666';
           ?>
           <div class="le-unpos-seat"
                draggable="true"
                data-id="<?= (int)$p['id'] ?>"
                data-code="<?= e($p['code']) ?>"
-               title="<?= e($p['code']) ?>"
-               style="position:relative">
+               data-area-id="<?= (int)$p['area_id'] ?>"
+               data-type="<?= e($p['type']) ?>"
+               data-price="<?= (float)$p['base_price'] ?>"
+               data-notes="<?= e($p['notes'] ?? '') ?>"
+               title="<?= e($p['code']) ?> · <?= e($p['area_name']) ?>"
+               style="position:relative;box-shadow:inset 0 3px 0 <?= $ac ?>"
+               onclick="handleSeatClick(event, this)">
             <?= e($lbl) ?>
-            <button class="le-del-btn" title="Elimina" onclick="deleteSeat(<?= (int)$p['id'] ?>,'<?= e($p['code']) ?>')">×</button>
+            <button class="le-edit-btn" title="Modifica" onclick="event.stopPropagation();openEditModalFromEl(this.closest('.le-unpos-seat'))">✏</button>
+            <button class="le-del-btn" title="Elimina" onclick="event.stopPropagation();deleteSeat(<?= (int)$p['id'] ?>,'<?= e($p['code']) ?>')">×</button>
           </div>
           <?php endforeach; ?>
         </div>
@@ -335,6 +410,57 @@ $statusColor = [
 
 </div><!-- /le-page -->
 
+<div class="le-modal-overlay" id="leModalOverlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="le-modal">
+    <div class="le-modal-head">
+      <span id="leModalTitle">Nuovo lettino</span>
+      <button type="button" class="le-modal-close" onclick="closeModal()">×</button>
+    </div>
+    <form id="leForm" onsubmit="return submitLeForm(event)">
+      <input type="hidden" id="lf_id">
+      <input type="hidden" id="lf_row">
+      <input type="hidden" id="lf_col">
+      <div class="le-modal-field">
+        <label>Codice</label>
+        <input type="text" id="lf_code" maxlength="32" required pattern="[A-Za-z0-9_\-]+"
+               style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="le-modal-field">
+        <label>Area</label>
+        <select id="lf_area">
+          <?php foreach ($poolAreas as $a): ?>
+          <option value="<?= (int) $a['id'] ?>"><?= e($a['name']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="le-modal-field">
+        <label>Tipo</label>
+        <select id="lf_type">
+          <option value="lettino">Lettino</option>
+          <option value="sdraio">Sdraio</option>
+          <option value="ombrellone">Ombrellone</option>
+          <option value="tavolo">Tavolo</option>
+          <option value="cabana">Cabana</option>
+        </select>
+      </div>
+      <div class="le-modal-field">
+        <label>Prezzo base (€)</label>
+        <input type="number" id="lf_price" min="0" step="0.50" value="0">
+      </div>
+      <div class="le-modal-field">
+        <label>Note</label>
+        <input type="text" id="lf_notes">
+      </div>
+      <div class="le-modal-err" id="lf_err" style="display:none"></div>
+      <div class="le-modal-actions">
+        <button type="button" class="le-modal-cancel" onclick="closeModal()">Annulla</button>
+        <button type="button" class="le-modal-delete d-none" id="lf_delete_btn" onclick="deleteFromModal()">Elimina</button>
+        <button type="submit" class="le-modal-save" id="lf_submit">Salva</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="le-toast" id="leToast"></div>
 
 <script>
@@ -342,8 +468,10 @@ $statusColor = [
   'use strict';
 
   const CSRF    = <?= json_encode(csrf_token(), JSON_THROW_ON_ERROR) ?>;
-  const POS_URL = <?= json_encode(url('/api/places/update-position.php'), JSON_THROW_ON_ERROR) ?>;
-  const DEL_URL = <?= json_encode(url('/api/places/delete-place.php'), JSON_THROW_ON_ERROR) ?>;
+  const POS_URL    = <?= json_encode(url('/api/places/update-position.php'), JSON_THROW_ON_ERROR) ?>;
+  const DEL_URL    = <?= json_encode(url('/api/places/delete-place.php'), JSON_THROW_ON_ERROR) ?>;
+  const CREATE_URL = <?= json_encode(url('/api/places/create-extra.php'), JSON_THROW_ON_ERROR) ?>;
+  const UPDATE_URL = <?= json_encode(url('/api/places/update-place.php'), JSON_THROW_ON_ERROR) ?>;
 
   let _dragId = null;
   let _dragEl = null;
@@ -486,6 +614,119 @@ $statusColor = [
     clearTimeout(_toastTimer);
     _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
   }
+
+  // ── Modal aggiungi/modifica lettino ──
+  window.openAddModal = function (row, col) {
+    document.getElementById('leModalTitle').textContent = 'Nuovo lettino';
+    document.getElementById('lf_id').value    = '';
+    document.getElementById('lf_row').value   = row;
+    document.getElementById('lf_col').value   = col;
+    setSelectValue('lf_type', 'lettino');
+    document.getElementById('lf_price').value = 0;
+    document.getElementById('lf_notes').value = '';
+    document.getElementById('lf_err').style.display = 'none';
+    document.getElementById('lf_delete_btn').classList.add('d-none');
+    // Suggerisce il prossimo codice EX libero
+    const existing = new Set([...document.querySelectorAll('[data-code]')].map(el => el.dataset.code));
+    let n = 1;
+    while (existing.has('EX' + String(n).padStart(2, '0'))) n++;
+    document.getElementById('lf_code').value = 'EX' + String(n).padStart(2, '0');
+    document.getElementById('leModalOverlay').style.display = 'flex';
+  };
+
+  window.openEditModalFromEl = function (el) {
+    document.getElementById('leModalTitle').textContent = 'Modifica lettino';
+    document.getElementById('lf_id').value    = el.dataset.id;
+    document.getElementById('lf_row').value   = '';
+    document.getElementById('lf_col').value   = '';
+    document.getElementById('lf_code').value  = el.dataset.code;
+    setSelectValue('lf_area', el.dataset.areaId);
+    setSelectValue('lf_type', el.dataset.type || 'lettino');
+    document.getElementById('lf_price').value = el.dataset.price || 0;
+    document.getElementById('lf_notes').value = el.dataset.notes || '';
+    document.getElementById('lf_err').style.display = 'none';
+    document.getElementById('lf_delete_btn').classList.remove('d-none');
+    document.getElementById('leModalOverlay').style.display = 'flex';
+  };
+
+  window.handleSeatClick = function (event, el) {
+    openEditModalFromEl(el);
+  };
+
+  window.closeModal = function () {
+    document.getElementById('leModalOverlay').style.display = 'none';
+  };
+
+  window.submitLeForm = function (event) {
+    event.preventDefault();
+    const id  = document.getElementById('lf_id').value;
+    const err = document.getElementById('lf_err');
+    const btn = document.getElementById('lf_submit');
+    err.style.display = 'none';
+    btn.disabled = true; btn.textContent = '…';
+
+    const params = {
+      _csrf:       CSRF,
+      code:        document.getElementById('lf_code').value,
+      area_id:     document.getElementById('lf_area').value,
+      type:        document.getElementById('lf_type').value,
+      base_price:  document.getElementById('lf_price').value,
+      notes:       document.getElementById('lf_notes').value,
+    };
+    let targetUrl;
+    if (id) {
+      params.place_id = id;
+      targetUrl = UPDATE_URL;
+    } else {
+      params.pos_row = document.getElementById('lf_row').value;
+      params.pos_col = document.getElementById('lf_col').value;
+      targetUrl = CREATE_URL;
+    }
+
+    fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params).toString()
+    })
+    .then(r => r.json())
+    .then(resp => {
+      if (resp.success) {
+        window.location.reload();
+      } else {
+        err.textContent = resp.error ?? 'Errore.';
+        err.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Salva';
+      }
+    })
+    .catch(() => {
+      err.textContent = 'Errore di rete.';
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Salva';
+    });
+    return false;
+  };
+
+  window.deleteFromModal = function () {
+    const id   = document.getElementById('lf_id').value;
+    const code = document.getElementById('lf_code').value;
+    if (!id) return;
+    if (!confirm('Eliminare il lettino ' + code + '?\nQuesta azione non può essere annullata.')) return;
+    fetch(DEL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ place_id: id, _csrf: CSRF }).toString()
+    })
+    .then(r => r.json())
+    .then(resp => {
+      if (resp.success) {
+        closeModal();
+        window.location.reload();
+      } else {
+        toast(resp.error ?? 'Errore', true);
+      }
+    })
+    .catch(() => toast('Errore di rete', true));
+  };
 
 })();
 </script>

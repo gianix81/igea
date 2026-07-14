@@ -112,12 +112,10 @@ $statusLabel = ['confermata' => 'Confermata', 'in attesa' => 'In attesa', 'compl
       </button>
       <!-- Nuova prenotazione -->
       <button class="btn btn-sm btn-primary" style="font-size:.75rem;padding:4px 10px" onclick="openNewResModal()">+ Nuova</button>
-      <!-- Lettino extra -->
-      <button class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;padding:4px 10px" onclick="openAddExtraModal()" title="Aggiungi lettino extra">+ Lettino</button>
       <!-- Libera tutto -->
       <button class="btn btn-sm btn-outline-danger" style="font-size:.75rem;padding:4px 10px" onclick="releaseAllPlaces()" title="Libera tutti i lettini occupati o prenotati per oggi">Libera tutto</button>
-      <!-- Editor schema -->
-      <a href="<?= url('/places/layout?date=' . urlencode($date)) ?>" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;padding:4px 10px" title="Editor schema lettini">
+      <!-- Editor schema: qui si aggiungono/modificano/posizionano i lettini -->
+      <a href="<?= url('/places/layout?date=' . urlencode($date)) ?>" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;padding:4px 10px" title="Aggiungi, modifica e posiziona i lettini">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="margin-right:3px"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Schema
       </a>
       <!-- Zoom -->
@@ -297,62 +295,6 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
 <div id="sidebarBackdrop" class="sidebar-backdrop" style="display:none" onclick="closeSidebar()"></div>
 
 <!-- ══ Modal: aggiungi lettino extra ══ -->
-<div class="modal fade" id="addExtraModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header py-2">
-        <h5 class="modal-title">Aggiungi lettino extra</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="addExtraForm">
-        <?= csrf_field() ?>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold mb-1">Codice <span class="text-danger">*</span></label>
-            <input type="text" class="form-control form-control-sm font-monospace text-uppercase"
-                   name="code" id="extraCode" placeholder="es. EX01" maxlength="32" required
-                   pattern="[A-Za-z0-9_\-]+" oninput="this.value=this.value.toUpperCase()">
-            <div class="form-text">Solo lettere e numeri. Es: EX01, VIP01, SPIAGGIA01</div>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label small fw-semibold mb-1">Area <span class="text-danger">*</span></label>
-              <select class="form-select form-select-sm" name="area_id" required>
-                <?php foreach ($poolAreas as $a): ?>
-                <option value="<?= (int)$a['id'] ?>"><?= e($a['name']) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold mb-1">Tipo</label>
-              <select class="form-select form-select-sm" name="type">
-                <option value="lettino">Lettino</option>
-                <option value="sdraio">Sdraio</option>
-                <option value="ombrellone">Ombrellone</option>
-                <option value="tavolo">Tavolo</option>
-                <option value="cabana">Cabana</option>
-              </select>
-            </div>
-          </div>
-          <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1">Prezzo base (€)</label>
-            <input type="number" class="form-control form-control-sm" name="base_price" value="0" min="0" step="0.50">
-          </div>
-          <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1">Note</label>
-            <input type="text" class="form-control form-control-sm" name="notes" placeholder="Opzionale">
-          </div>
-          <div id="addExtraErr" class="alert alert-danger py-2 mt-2 d-none small"></div>
-        </div>
-        <div class="modal-footer py-2">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annulla</button>
-          <button type="submit" class="btn btn-primary btn-sm" id="addExtraSubmitBtn">Aggiungi lettino</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 <!-- ══ Modal: nuova prenotazione ══ -->
 <div class="modal fade" id="newResModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -612,7 +554,6 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
   const BOOK_URL = <?= json_encode(url('/api/places/book.php'), JSON_THROW_ON_ERROR) ?>;
   const EDIT_URL = <?= json_encode(url('/api/places/edit-reservation.php'), JSON_THROW_ON_ERROR) ?>;
   const CANC_URL  = <?= json_encode(url('/api/places/cancel-reservation.php'), JSON_THROW_ON_ERROR) ?>;
-  const EXTRA_URL = <?= json_encode(url('/api/places/create-extra.php'), JSON_THROW_ON_ERROR) ?>;
   const RELEASE_ALL_URL = <?= json_encode(url('/api/places/release-all.php'), JSON_THROW_ON_ERROR) ?>;
   const QUICK_CREATE_URL = <?= json_encode(url('/api/customers/quick-create.php'), JSON_THROW_ON_ERROR) ?>;
   const PLACES_URL = <?= json_encode(url('/places'), JSON_THROW_ON_ERROR) ?>;
@@ -623,7 +564,6 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
   const assignModal = new bootstrap.Modal(document.getElementById('assignModal'));
   const newResModal   = new bootstrap.Modal(document.getElementById('newResModal'));
   const editResModal  = new bootstrap.Modal(document.getElementById('editResModal'));
-  const addExtraModal = new bootstrap.Modal(document.getElementById('addExtraModal'));
 
   // ── Calibrazione + Zoom ──
   let baseH = 30, baseW = 50, mapZoom = 1.0;
@@ -1412,53 +1352,6 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     btn.classList.add('seat-highlight');
     setTimeout(() => btn.classList.remove('seat-highlight'), 2000);
   };
-
-  // ─────────────────────────────────────────
-  // LETTINO EXTRA
-  // ─────────────────────────────────────────
-  window.openAddExtraModal = function () {
-    document.getElementById('addExtraForm').reset();
-    document.getElementById('addExtraErr').classList.add('d-none');
-    document.getElementById('addExtraSubmitBtn').disabled = false;
-    document.getElementById('addExtraSubmitBtn').textContent = 'Aggiungi lettino';
-    // Suggerisci il prossimo codice EX libero
-    const existing = new Set([...document.querySelectorAll('.seat[data-code]')].map(b => b.dataset.code));
-    let n = 1;
-    while (existing.has('EX' + String(n).padStart(2, '0'))) n++;
-    document.getElementById('extraCode').value = 'EX' + String(n).padStart(2, '0');
-    addExtraModal.show();
-  };
-
-  document.getElementById('addExtraForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const btn = document.getElementById('addExtraSubmitBtn');
-    const err = document.getElementById('addExtraErr');
-    btn.disabled = true; btn.textContent = '…';
-    err.classList.add('d-none');
-    const params = new URLSearchParams(new FormData(this));
-    params.set('_csrf', CSRF);
-    fetch(EXTRA_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString()
-    })
-    .then(r => r.json())
-    .then(resp => {
-      if (resp.success) {
-        addExtraModal.hide();
-        window.location.href = PLACES_URL + '?date=' + encodeURIComponent(currentDate);
-      } else {
-        err.textContent = resp.error ?? 'Errore.';
-        err.classList.remove('d-none');
-        btn.disabled = false; btn.textContent = 'Aggiungi lettino';
-      }
-    })
-    .catch(() => {
-      err.textContent = 'Errore di rete.';
-      err.classList.remove('d-none');
-      btn.disabled = false; btn.textContent = 'Aggiungi lettino';
-    });
-  });
 
 })();
 </script>

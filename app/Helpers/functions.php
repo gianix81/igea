@@ -10,11 +10,12 @@ function app_config(string $key, mixed $default = null): mixed
 }
 
 /**
- * Ritaglia al centro un quadrato dall'immagine sorgente e la ridimensiona a
- * $size x $size, restituendo bytes JPEG ottimizzati. Così la foto è già pronta
- * e coerente in ogni punto dell'app (miniatura, card, modal) indipendentemente
- * dalle proporzioni dello scatto originale, invece di affidarsi solo al
- * ritaglio CSS in visualizzazione.
+ * Riduce l'immagine sorgente per intero dentro un canvas quadrato $size x
+ * $size (nessun ritaglio: il soggetto resta sempre visibile per intero,
+ * con bordi bianchi dove le proporzioni non sono già quadrate), restituendo
+ * bytes JPEG ottimizzati. Così la foto è già pronta e coerente in ogni punto
+ * dell'app (miniatura, card, modal) indipendentemente dalle proporzioni
+ * dello scatto originale.
  */
 function square_crop_image(string $bytes, int $size = 640, int $quality = 82): ?string
 {
@@ -23,16 +24,18 @@ function square_crop_image(string $bytes, int $size = 640, int $quality = 82): ?
         return null;
     }
 
-    $srcW = imagesx($src);
-    $srcH = imagesy($src);
-    $cropSize = min($srcW, $srcH);
-    $srcX = (int) (($srcW - $cropSize) / 2);
-    $srcY = (int) (($srcH - $cropSize) / 2);
+    $srcW  = imagesx($src);
+    $srcH  = imagesy($src);
+    $scale = min($size / $srcW, $size / $srcH);
+    $dstW  = max(1, (int) round($srcW * $scale));
+    $dstH  = max(1, (int) round($srcH * $scale));
+    $dstX  = (int) (($size - $dstW) / 2);
+    $dstY  = (int) (($size - $dstH) / 2);
 
     $dst = imagecreatetruecolor($size, $size);
     $white = imagecolorallocate($dst, 255, 255, 255);
     imagefill($dst, 0, 0, $white);
-    imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $size, $size, $cropSize, $cropSize);
+    imagecopyresampled($dst, $src, $dstX, $dstY, 0, 0, $dstW, $dstH, $srcW, $srcH);
 
     ob_start();
     imagejpeg($dst, null, $quality);

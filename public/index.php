@@ -361,14 +361,21 @@ try {
         require_role(['admin', 'cassa', 'reception']);
         require_section('cassa');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $card = (new CardService())->findByCode((string) request_input('card_code'));
+            $card   = (new CardService())->findByCode((string) request_input('card_code'));
             if (!$card) throw new RuntimeException('Card non trovata.');
-            $confirmed = (string) request_input('outcome', 'ok') !== 'non_ok';
-            (new PaymentService())->pay((int) $card['id'], (float) request_input('amount'), (string) request_input('payment_method'), (string) request_input('reason', 'saldo finale'), current_user()['id'], request_input('notes'), $confirmed);
-            $message = $confirmed
-                ? 'Pagamento registrato.'
-                : 'Tentativo registrato come non riuscito: saldo e movimenti non modificati.';
-            redirect('/cashdesk?code=' . urlencode($card['card_code']) . '&message=' . urlencode($message));
+            $amount = (float) request_input('amount');
+            $method = (string) request_input('payment_method');
+            // "Registra" incassa e basta (si fattura solo su richiesta successiva del
+            // cliente); "Registra e stampa" incassa e stampa subito lo scontrino.
+            $doPrint = (string) request_input('action', '') === 'registra_stampa';
+            (new PaymentService())->pay((int) $card['id'], $amount, $method, (string) request_input('reason', 'saldo finale'), current_user()['id'], request_input('notes'), true);
+            $params = ['code' => $card['card_code'], 'message' => 'Pagamento registrato.'];
+            if ($doPrint) {
+                $params['print']        = '1';
+                $params['print_amount'] = number_format($amount, 2, '.', '');
+                $params['print_method'] = $method;
+            }
+            redirect('/cashdesk?' . http_build_query($params));
         }
         $pdo  = db();
         $code  = trim((string) request_input('code', ''));
@@ -409,8 +416,8 @@ try {
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $date = date('Y-m-d');
 
         $layoutStmt = db()->prepare("
-            SELECT p.id, p.code, p.row_label, p.number, p.type, p.base_price,
-                   p.pos_row, p.pos_col, a.name area_name,
+            SELECT p.id, p.code, p.row_label, p.number, p.type, p.base_price, p.notes,
+                   p.pos_row, p.pos_col, p.area_id, a.name area_name,
                    CASE
                      WHEN ep_a.place_id IS NOT NULL THEN 'riservato'
                      WHEN rp_a.place_id IS NOT NULL THEN 'riservato'
@@ -435,7 +442,8 @@ try {
         ");
         $layoutStmt->execute([$date, $date]);
         $layoutPlaces = $layoutStmt->fetchAll();
-        render('places/layout', compact('layoutPlaces', 'date'));
+        $poolAreas    = db()->query("SELECT id, name FROM pool_areas WHERE active = 1 ORDER BY id")->fetchAll();
+        render('places/layout', compact('layoutPlaces', 'date', 'poolAreas'));
         exit;
     }
 

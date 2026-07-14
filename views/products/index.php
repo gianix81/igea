@@ -293,7 +293,7 @@ foreach ($categories as $c) {
               onclick='editProduct(<?= json_encode($p) ?>)'>
             <td>
               <?php if (!empty($p['image_path'])): ?>
-                <img src="<?= url('/' . e($p['image_path'])) ?>" alt="" style="width:34px;height:34px;border-radius:6px;object-fit:cover;border:1px solid var(--border)">
+                <img src="<?= url('/' . e($p['image_path'])) ?>" alt="" style="width:34px;height:34px;border-radius:6px;object-fit:contain;background:var(--surface-2);border:1px solid var(--border)">
               <?php else: ?>
                 <span style="display:inline-flex;width:34px;height:34px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);align-items:center;justify-content:center;color:var(--muted-2);font-size:15px">📦</span>
               <?php endif; ?>
@@ -397,7 +397,7 @@ foreach ($categories as $c) {
         <div class="row g-3">
           <div class="col-md-3 d-flex flex-column align-items-center gap-2">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);align-self:flex-start">Foto</div>
-            <div id="pm_image_wrap" style="width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center">
+            <div id="pm_image_wrap" style="position:relative;width:100%;max-width:180px;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center">
               <span id="pm_image_img" style="font-size:34px;color:var(--muted-2)">📦</span>
             </div>
             <label class="btn btn-sm btn-outline-secondary mb-0 w-100" style="cursor:pointer">
@@ -583,7 +583,7 @@ function pmRenderImage(src) {
   var wrap = document.getElementById('pm_image_wrap');
   var clearBtn = document.getElementById('pm_image_clear_btn');
   if (src) {
-    wrap.innerHTML = '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover">';
+    wrap.innerHTML = '<img src="' + src + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">';
     clearBtn.classList.remove('d-none');
   } else {
     wrap.innerHTML = '<span style="font-size:34px;color:var(--muted-2)">📦</span>';
@@ -595,9 +595,26 @@ function pmLoadFile(input) {
   var file = input.files[0]; if (!file) return;
   var reader = new FileReader();
   reader.onload = function (e) {
-    document.getElementById('pm_image_data').value  = e.target.result;
-    document.getElementById('pm_clear_image').value = '0';
-    pmRenderImage(e.target.result);
+    var img = new Image();
+    img.onload = function () {
+      // Ridimensiona lato client prima dell'invio: una foto da smartphone può
+      // pesare diversi MB, che sul server (upload + GD) diventano lenti e a
+      // volte vanno in timeout lato browser pur salvando comunque (falso
+      // "errore di rete"). Il server ritaglia comunque a 640x640: 1280px sul
+      // lato lungo è già più che sufficiente come sorgente.
+      var maxSide = 1280;
+      var scale   = Math.min(1, maxSide / Math.max(img.width, img.height));
+      var w = Math.round(img.width * scale);
+      var h = Math.round(img.height * scale);
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      document.getElementById('pm_image_data').value  = dataUrl;
+      document.getElementById('pm_clear_image').value = '0';
+      pmRenderImage(dataUrl);
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }

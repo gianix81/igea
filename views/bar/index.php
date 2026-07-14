@@ -126,7 +126,7 @@
 .product-button.dept-altro      { border-top: 4px solid var(--muted-2); }
 
 /* Foto d'esempio prodotto */
-.pb-thumb { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; }
+.pb-thumb { width: 100%; height: 64px; object-fit: contain; background: var(--surface-2); border-radius: 8px; margin-bottom: 8px; display: block; }
 
 /* Dept badge (small pill at top of card) */
 .pb-badge {

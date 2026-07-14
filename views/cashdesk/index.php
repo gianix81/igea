@@ -174,7 +174,15 @@ body.ca-active main.app {
 }
 .ca-btn:hover { opacity: .85; }
 .ca-btn.pay           { background: var(--accent); color: var(--accent-ink); }
-.ca-btn.non-ok        { flex: 0 0 auto; background: transparent; color: var(--bad); border: 1.5px solid var(--bad); }
+.ca-btn.print-btn     { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+
+/* ── Scontrino stampabile: nascosto a schermo, unico contenuto visibile in stampa ── */
+#receiptPrint { display: none; }
+@media print {
+  body * { visibility: hidden; }
+  #receiptPrint, #receiptPrint * { visibility: visible; }
+  #receiptPrint { display: block !important; position: fixed; top: 0; left: 0; width: 100%; }
+}
 .ca-btn.checkout      { background: var(--good);  color: #fff; }
 .ca-btn.checkout-warn { background: var(--warn);  color: #fff; }
 
@@ -439,10 +447,9 @@ function caColor(string $name, array $pal): string {
             </div>
           </div>
           <div class="ca-pay-actions">
-            <button type="submit" name="outcome" value="ok" class="ca-btn pay">💳 Registra OK</button>
-            <button type="submit" name="outcome" value="non_ok" class="ca-btn non-ok"
-                    onclick="return confirm('Registrare il tentativo come NON riuscito?\nIl saldo e i movimenti della card non verranno modificati.')"
-                    title="Il pagamento non è andato a buon fine: registra il tentativo senza toccare il saldo">✕ Non OK</button>
+            <button type="submit" name="action" value="registra" class="ca-btn pay">💳 Registra</button>
+            <button type="submit" name="action" value="registra_stampa" class="ca-btn print-btn"
+                    title="Registra il pagamento e stampa subito lo scontrino">🖨 Registra e stampa</button>
             <?php if ($isInside): ?>
             <button type="button" class="ca-btn <?= $due > 0 ? 'checkout-warn' : 'checkout' ?>" id="caCheckoutBtn">
               <?= $due > 0 ? '⚠ Check-out' : '✓ Check-out' ?>
@@ -465,7 +472,34 @@ function caColor(string $name, array $pal): string {
   </div>
 </div>
 
+<?php if ($card && !empty($_GET['print'])): ?>
+<div id="receiptPrint">
+  <div style="text-align:center;font-family:monospace;font-size:13px;line-height:1.6;padding:16px;max-width:300px;margin:0 auto">
+    <div style="font-weight:800;font-size:16px;margin-bottom:2px"><?= e(app_config('name')) ?></div>
+    <div style="font-size:11px;color:#555;margin-bottom:10px"><?= e(date('d/m/Y H:i')) ?></div>
+    <hr>
+    <div>Cliente: <?= e($card['customer_name']) ?></div>
+    <div>Card: <?= e($card['card_code']) ?></div>
+    <hr>
+    <div style="font-size:18px;font-weight:800;margin:8px 0">€&nbsp;<?= e(number_format((float) ($_GET['print_amount'] ?? 0), 2, ',', '.')) ?></div>
+    <div>Metodo: <?= e(ucfirst((string) ($_GET['print_method'] ?? ''))) ?></div>
+    <hr>
+    <div style="font-size:11px;color:#555;margin-top:8px">Operatore: <?= e(current_user()['name']) ?></div>
+  </div>
+</div>
+<?php endif; ?>
+
 <script>
+<?php if ($card && !empty($_GET['print'])): ?>
+/* ── Stampa scontrino: al rientro da "Registra e stampa" ── */
+window.addEventListener('load', function () {
+  window.print();
+  var url = new URL(window.location.href);
+  ['print', 'print_amount', 'print_method'].forEach(function (k) { url.searchParams.delete(k); });
+  history.replaceState(null, '', url.toString());
+});
+<?php endif; ?>
+
 /* ── Account list click → CardVerify ───────────────────── */
 document.querySelectorAll('.ca-account').forEach(function(el) {
   el.addEventListener('click', function(e) {

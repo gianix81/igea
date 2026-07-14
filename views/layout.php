@@ -8,16 +8,16 @@ if ($base && str_starts_with($reqPath, $base)) {
 
 /* ── Struttura navigazione ────────────────────────────────── */
 $navItems = [
-    ['href' => '/',          'label' => 'Dashboard'],
-    ['href' => '/customers', 'label' => 'Clienti'],
+    ['href' => '/',          'label' => 'Dashboard', 'section' => 'dashboard'],
+    ['href' => '/customers', 'label' => 'Clienti',   'section' => 'clienti'],
     [
         'label'    => 'Piscina',
         'href'     => '/places',
         'main'     => true,
         'children' => [
-            ['href' => '/entries', 'label' => 'Reception',     'icon' => '🚪'],
-            ['href' => '/places',  'label' => 'Mappa Piscina', 'icon' => '🏊'],
-            ['href' => '/tariffe', 'label' => 'Tariffe',       'icon' => '💶'],
+            ['href' => '/entries', 'label' => 'Reception',     'icon' => '🚪', 'section' => 'reception'],
+            ['href' => '/places',  'label' => 'Mappa Piscina', 'icon' => '🏊', 'section' => 'piscina'],
+            ['href' => '/tariffe', 'label' => 'Tariffe',       'icon' => '💶', 'section' => 'tariffe'],
         ],
     ],
     [
@@ -25,20 +25,39 @@ $navItems = [
         'href'     => '/bar',
         'main'     => true,
         'children' => [
-            ['href' => '/bar',    'label' => 'Consumazioni',  'icon' => '🍹'],
+            ['href' => '/bar',    'label' => 'Consumazioni',  'icon' => '🍹', 'section' => 'food'],
         ],
     ],
-    ['href' => '/cashdesk', 'label' => 'Cassa', 'main' => true],
-    ['href' => '/products', 'label' => 'Prodotti'],
+    ['href' => '/cashdesk', 'label' => 'Cassa', 'main' => true, 'section' => 'cassa'],
+    ['href' => '/products', 'label' => 'Prodotti', 'section' => 'prodotti'],
     ['label' => 'Report', 'children' => [
-        ['href' => '/reports',           'label' => 'Riepilogo',          'icon' => '📊'],
-        ['href' => '/storico/ingressi',  'label' => 'Storico ingressi',   'icon' => '🚪'],
-        ['href' => '/storico/pagamenti', 'label' => 'Storico pagamenti',  'icon' => '💳'],
+        ['href' => '/reports',           'label' => 'Riepilogo',          'icon' => '📊', 'section' => 'report'],
+        ['href' => '/storico/ingressi',  'label' => 'Storico ingressi',   'icon' => '🚪', 'section' => 'report'],
+        ['href' => '/storico/pagamenti', 'label' => 'Storico pagamenti',  'icon' => '💳', 'section' => 'report'],
     ]],
 ];
 if (has_role('admin')) {
     $navItems[] = ['href' => '/utenti', 'label' => 'Utenti'];
 }
+
+/* Nasconde le voci di menu (e i gruppi rimasti senza figlie) per le sezioni
+   che l'admin non ha assegnato a questo operatore. */
+function filter_nav_items(array $items): array {
+    $out = [];
+    foreach ($items as $item) {
+        if (isset($item['children'])) {
+            $item['children'] = array_values(array_filter(
+                $item['children'],
+                fn($child) => !isset($child['section']) || has_section($child['section'])
+            ));
+            if ($item['children']) $out[] = $item;
+        } elseif (!isset($item['section']) || has_section($item['section'])) {
+            $out[] = $item;
+        }
+    }
+    return $out;
+}
+$navItems = filter_nav_items($navItems);
 
 /* is-active helper: check item or any child */
 function nav_active(string $reqPath, array $item): bool {

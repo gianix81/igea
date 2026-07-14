@@ -32,6 +32,15 @@
 .ut-active-yes { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--good); }
 .ut-active-no  { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--bad); }
 .ut-active-yes::before, .ut-active-no::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+.ut-perms-chip {
+  display:inline-block; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em;
+  padding:3px 9px; border-radius:8px; background:color-mix(in srgb, var(--accent) 15%, transparent); color:var(--accent);
+}
+.ut-perms-grid {
+  display:grid; grid-template-columns:repeat(2, 1fr); gap:8px 14px;
+  border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:8px;
+}
+.ut-perms-grid .form-check { margin:0; }
 #ut-toast {
   position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px);
   background: var(--good); color: #fff; padding: .55rem 1.4rem; border-radius: 10px;
@@ -56,7 +65,7 @@
   <div class="ut-panel" style="overflow-x:auto">
     <table class="ut-table">
       <thead>
-        <tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Stato</th></tr>
+        <tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Sezioni</th><th>Stato</th></tr>
       </thead>
       <tbody>
         <?php foreach ($roleUsers as $u): ?>
@@ -64,6 +73,15 @@
           <td style="font-weight:700"><?= e($u['name']) ?></td>
           <td style="color:var(--muted)"><?= e($u['email']) ?></td>
           <td><span class="ut-role-chip ut-role-<?= e($u['role']) ?>"><?= e(ucfirst($u['role'])) ?></span></td>
+          <td>
+            <?php if ($u['role'] === 'admin'): ?>
+              <span style="color:var(--muted-2)">Tutte</span>
+            <?php elseif ($u['permissions'] === null): ?>
+              <span style="color:var(--muted-2)">Default del ruolo</span>
+            <?php else: ?>
+              <span class="ut-perms-chip"><?= count($u['permissions']) ?> personalizzate</span>
+            <?php endif; ?>
+          </td>
           <td>
             <?php if ($u['active']): ?>
               <span class="ut-active-yes">Attivo</span>
@@ -110,6 +128,18 @@
           <input class="form-check-input" type="checkbox" id="um_active">
           <label class="form-check-label" for="um_active">Attivo</label>
         </div>
+        <div class="form-check mt-3" id="um_custom_wrap">
+          <input class="form-check-input" type="checkbox" id="um_custom_perms" onchange="toggleCustomPerms()">
+          <label class="form-check-label" for="um_custom_perms">Limita l'accesso solo ad alcune sezioni</label>
+        </div>
+        <div class="ut-perms-grid d-none" id="um_perms_grid">
+          <?php foreach ($sectionDefs as $key => $label): ?>
+            <div class="form-check">
+              <input class="form-check-input um-perm" type="checkbox" value="<?= e($key) ?>" id="um_perm_<?= e($key) ?>">
+              <label class="form-check-label" for="um_perm_<?= e($key) ?>"><?= e($label) ?></label>
+            </div>
+          <?php endforeach; ?>
+        </div>
         <div id="um_error" class="alert alert-danger mt-3 d-none" style="font-size:13px;border-radius:9px"></div>
       </div>
       <div class="modal-footer">
@@ -136,9 +166,27 @@ function openUserModal(data) {
   document.getElementById('um_pw_hint').style.display = data ? '' : 'none';
   document.getElementById('um_error').classList.add('d-none');
   document.getElementById('userModalTitle').textContent = data ? 'Modifica utente' : 'Nuovo utente';
+
+  const perms = data && Array.isArray(data.permissions) ? data.permissions : null;
+  document.querySelectorAll('.um-perm').forEach(function (cb) { cb.checked = !!perms && perms.includes(cb.value); });
+  document.getElementById('um_custom_perms').checked = !!perms;
+  toggleCustomPerms();
+  toggleCustomWrapForRole();
+
   new bootstrap.Modal(document.getElementById('userModal')).show();
 }
 function editUser(data) { openUserModal(data); }
+
+function toggleCustomPerms() {
+  const on = document.getElementById('um_custom_perms').checked;
+  document.getElementById('um_perms_grid').classList.toggle('d-none', !on);
+}
+function toggleCustomWrapForRole() {
+  const isAdmin = document.getElementById('um_role').value === 'admin';
+  document.getElementById('um_custom_wrap').classList.toggle('d-none', isAdmin);
+  document.getElementById('um_perms_grid').classList.toggle('d-none', isAdmin || !document.getElementById('um_custom_perms').checked);
+}
+document.getElementById('um_role').addEventListener('change', toggleCustomWrapForRole);
 
 function saveUser() {
   const errEl = document.getElementById('um_error');
@@ -147,15 +195,21 @@ function saveUser() {
   if (!name || !email) {
     errEl.textContent = 'Nome ed email sono obbligatori.'; errEl.classList.remove('d-none'); return;
   }
+  const role       = document.getElementById('um_role').value;
+  const customOn   = role !== 'admin' && document.getElementById('um_custom_perms').checked;
+  const permsArray = customOn
+    ? Array.from(document.querySelectorAll('.um-perm:checked')).map(cb => cb.value)
+    : null;
+
   fetch(SAVE_USER_URL, {
     method: 'POST',
     body: new URLSearchParams({
       _csrf: UT_CSRF,
       id:       document.getElementById('um_id').value,
-      name, email,
-      role:     document.getElementById('um_role').value,
+      name, email, role,
       password: document.getElementById('um_password').value,
       active:   document.getElementById('um_active').checked ? '1' : '0',
+      permissions: permsArray === null ? '' : JSON.stringify(permsArray),
     })
   }).then(r => r.json()).then(function (resp) {
     if (resp.success) {

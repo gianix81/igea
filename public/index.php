@@ -253,6 +253,7 @@ try {
 
     if ($path === '/entries') {
         require_role(['admin', 'reception']);
+        require_section('reception');
         $error = null;
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo = db();
@@ -324,6 +325,7 @@ try {
 
     if ($path === '/bar') {
         require_role(['admin', 'bar', 'ristorazione']);
+        require_section('food');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $card = (new CardService())->findByCode((string) request_input('card_code'));
             if (!$card) throw new RuntimeException('Card non trovata.');
@@ -357,6 +359,7 @@ try {
 
     if ($path === '/cashdesk') {
         require_role(['admin', 'cassa', 'reception']);
+        require_section('cassa');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $card = (new CardService())->findByCode((string) request_input('card_code'));
             if (!$card) throw new RuntimeException('Card non trovata.');
@@ -401,6 +404,7 @@ try {
 
     if ($path === '/places/layout') {
         require_role(['admin', 'reception']);
+        require_section('piscina');
         $date = trim((string) request_input('date', date('Y-m-d')));
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $date = date('Y-m-d');
 
@@ -437,6 +441,7 @@ try {
 
     if ($path === '/places') {
         require_role(['admin', 'reception']);
+        require_section('piscina');
 
         // Creazione prenotazione (senza posto specifico — il posto viene abbinato via API /api/places/book.php)
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && request_input('_action') === 'new_reservation') {
@@ -545,6 +550,7 @@ try {
 
     if ($path === '/products') {
         require_role(['admin', 'reception']);
+        require_section('prodotti');
         $pdo        = db();
         $categories = $pdo->query("SELECT * FROM product_categories ORDER BY department, name")->fetchAll();
         $products   = $pdo->query("SELECT p.*, pc.name category_name, pc.department FROM products p JOIN product_categories pc ON pc.id = p.category_id ORDER BY pc.department, pc.name, p.name")->fetchAll();
@@ -554,6 +560,7 @@ try {
 
     if ($path === '/tariffe') {
         require_role(['admin', 'reception']);
+        require_section('tariffe');
         $rates = (new PriceListService())->all();
         render('tariffe/index', compact('rates'));
         exit;
@@ -561,8 +568,13 @@ try {
 
     if ($path === '/utenti') {
         require_role(['admin']);
-        $roleUsers = db()->query("SELECT id, name, email, role, active, created_at FROM users ORDER BY FIELD(role,'admin','gestore','reception','bar','ristorazione','cassa'), name")->fetchAll();
-        render('utenti/index', compact('roleUsers'));
+        $roleUsers   = db()->query("SELECT id, name, email, role, permissions, active, created_at FROM users ORDER BY FIELD(role,'admin','gestore','reception','bar','ristorazione','cassa'), name")->fetchAll();
+        foreach ($roleUsers as &$ru) {
+            $ru['permissions'] = $ru['permissions'] !== null ? json_decode($ru['permissions'], true) : null;
+        }
+        unset($ru);
+        $sectionDefs = app_sections();
+        render('utenti/index', compact('roleUsers', 'sectionDefs'));
         exit;
     }
 
@@ -575,6 +587,7 @@ try {
 
     if ($path === '/reports') {
         require_role(['admin', 'cassa']);
+        require_section('report');
         $pdo      = db();
         $fromDate = trim((string) request_input('from', date('Y-m-d')));
         $toDate   = trim((string) request_input('to',   date('Y-m-d')));
@@ -710,6 +723,7 @@ try {
     // ── Customers Register ───────────────────────────────────────────────────
     if ($path === '/customers/register') {
         require_role(['admin', 'reception']);
+        require_section('clienti');
         render('customers/register');
         exit;
     }
@@ -717,6 +731,7 @@ try {
     // ── Storico ingressi ─────────────────────────────────────────────────────
     if ($path === '/storico/ingressi') {
         require_role(['admin', 'cassa', 'reception']);
+        require_section('report');
         $pdo  = db();
         $from = trim((string) request_input('from', date('Y-m-d', strtotime('-30 days'))));
         $to   = trim((string) request_input('to',   date('Y-m-d')));
@@ -735,6 +750,7 @@ try {
     // ── Storico pagamenti ────────────────────────────────────────────────────
     if ($path === '/storico/pagamenti') {
         require_role(['admin', 'cassa', 'reception']);
+        require_section('report');
         $pdo  = db();
         $from = trim((string) request_input('from', date('Y-m-d', strtotime('-30 days'))));
         $to   = trim((string) request_input('to',   date('Y-m-d')));

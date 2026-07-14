@@ -41,9 +41,14 @@ if ($clearImage) {
     if (!is_dir($uploadsDir)) mkdir($uploadsDir, 0755, true);
     $imgBytes = base64_decode(preg_replace('#^data:image/\w+;base64,#', '', $imageData));
     if ($imgBytes !== false && strlen($imgBytes) > 100) {
-        $fname = 'p_' . time() . '_' . bin2hex(random_bytes(4)) . '.jpg';
-        file_put_contents($uploadsDir . $fname, $imgBytes);
-        $newImagePath = 'uploads/products/' . $fname;
+        $processed = square_crop_image($imgBytes);
+        if ($processed !== null) {
+            $fname = 'p_' . time() . '_' . bin2hex(random_bytes(4)) . '.jpg';
+            file_put_contents($uploadsDir . $fname, $processed);
+            $newImagePath = 'uploads/products/' . $fname;
+        } else {
+            json_response(['success' => false, 'error' => 'Formato immagine non riconosciuto. Usa JPG, PNG o WEBP.']);
+        }
     }
 }
 

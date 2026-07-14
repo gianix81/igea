@@ -848,6 +848,15 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
       </div>`;
       const errEl = dd.querySelector('.res-cust-create-err');
       dd.querySelector('.rc-first').focus();
+      dd.querySelectorAll('.res-cust-create-form input').forEach(field => {
+        field.addEventListener('blur', function () {
+          setTimeout(() => {
+            if (!dd.contains(document.activeElement)) {
+              dd.style.display = 'none';
+            }
+          }, 150);
+        });
+      });
       dd.querySelector('.res-cust-create-cancel').addEventListener('mousedown', function (e) {
         e.preventDefault();
         dd.style.display = 'none';
@@ -921,7 +930,15 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
       });
       dd.style.display = '';
     });
-    inp.addEventListener('blur', function () { setTimeout(() => { dd.style.display = 'none'; }, 150); });
+    inp.addEventListener('blur', function () {
+      // Non nascondere se il focus si è spostato dentro alla tendina stessa
+      // (es. sul mini-form "Crea nuovo cliente" appena aperto).
+      setTimeout(() => {
+        if (!dd.contains(document.activeElement)) {
+          dd.style.display = 'none';
+        }
+      }, 150);
+    });
   }
 
   function resetCustSearch(inputId, dropdownId, hiddenId, infoId) {
@@ -972,6 +989,11 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     const err = document.getElementById('newResErr');
     if (!document.getElementById('newCustomerId').value) {
       err.textContent = 'Seleziona un cliente dalla lista.';
+      err.classList.remove('d-none'); return;
+    }
+    const newPeopleCount = parseInt(this.querySelector('[name="people_count"]').value, 10) || 1;
+    if (selectedSeats.length > 0 && selectedSeats.length !== newPeopleCount) {
+      err.textContent = `Hai indicato ${newPeopleCount} person${newPeopleCount === 1 ? 'a' : 'e'} ma ${selectedSeats.length === 1 ? 'è selezionato' : 'sono selezionati'} ${selectedSeats.length} lettin${selectedSeats.length === 1 ? 'o' : 'i'}: i numeri devono coincidere. Seleziona ${newPeopleCount} lettin${newPeopleCount === 1 ? 'o' : 'i'} dalla mappa, oppure correggi il numero di persone.`;
       err.classList.remove('d-none'); return;
     }
     btn.disabled = true; btn.textContent = '…';
@@ -1068,6 +1090,15 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     e.preventDefault();
     const btn = document.getElementById('editResSubmitBtn');
     const err = document.getElementById('editResErr');
+
+    const editPeopleCount = parseInt(this.querySelector('[name="people_count"]').value, 10) || 1;
+    const assignedSeatsCount = (editSeatsChanged && selectedSeats.length > 0)
+      ? selectedSeats.length
+      : editOriginalCodes.split(', ').filter(Boolean).length;
+    if (assignedSeatsCount > 0 && assignedSeatsCount !== editPeopleCount) {
+      err.textContent = `Hai indicato ${editPeopleCount} person${editPeopleCount === 1 ? 'a' : 'e'} ma ${assignedSeatsCount === 1 ? 'è assegnato' : 'sono assegnati'} ${assignedSeatsCount} lettin${assignedSeatsCount === 1 ? 'o' : 'i'}: i numeri devono coincidere. Cambia i lettini dalla mappa, oppure correggi il numero di persone.`;
+      err.classList.remove('d-none'); return;
+    }
     btn.disabled = true; btn.textContent = '…';
     err.classList.add('d-none');
 

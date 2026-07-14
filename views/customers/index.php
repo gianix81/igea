@@ -439,7 +439,7 @@ function cu_initials(string $first, string $last): string {
       if ($c['status'] === 'attivo')    $stat_active++;
       if ($c['status'] === 'sospeso')   $stat_suspended++;
       if ($c['status'] === 'blacklist') $stat_blacklist++;
-      $stat_balance += (float)$c['total_balance'];
+      if ((float)$c['total_balance'] > 0) $stat_balance += (float)$c['total_balance'];
       $stat_cards   += (int)$c['active_cards'];
   }
 ?>
@@ -564,6 +564,8 @@ function cu_initials(string $first, string $last): string {
       <td class="text-end">
         <?php if ($bal > 0): ?>
           <span style="color:var(--bad);font-weight:800;font-size:14px">€&nbsp;<?= number_format($bal, 2, ',', '.') ?></span>
+        <?php elseif ($bal < 0): ?>
+          <span style="color:var(--good);font-weight:800;font-size:14px">€&nbsp;<?= number_format($bal, 2, ',', '.') ?></span>
         <?php else: ?>
           <span style="color:var(--muted-2)">—</span>
         <?php endif; ?>

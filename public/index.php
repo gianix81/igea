@@ -49,7 +49,13 @@ try {
             $user = $stmt->fetch();
             if ($user && password_verify((string) request_input('password'), $user['password_hash'])) {
                 session_regenerate_id(true);
-                $_SESSION['user'] = ['id' => (int) $user['id'], 'name' => $user['name'], 'email' => $user['email'], 'role' => $user['role']];
+                $_SESSION['user'] = [
+                    'id'          => (int) $user['id'],
+                    'name'        => $user['name'],
+                    'email'       => $user['email'],
+                    'role'        => $user['role'],
+                    'permissions' => $user['permissions'] !== null ? json_decode($user['permissions'], true) : null,
+                ];
                 redirect('/');
             }
             render('auth/login', ['error' => 'Credenziali non valide.']);
@@ -152,6 +158,7 @@ try {
     require_login();
 
     if ($path === '/') {
+        require_section('dashboard');
         $pdo = db();
         $inside  = (int) $pdo->query("SELECT COUNT(*) FROM entries WHERE status IN ('dentro','bloccato') AND entry_date = CURDATE()")->fetchColumn();
         $resPren = 0; $resWait = 0;
@@ -175,6 +182,7 @@ try {
 
     if ($path === '/customers') {
         require_role(['admin', 'reception', 'cassa']);
+        require_section('clienti');
         $q = trim((string) request_input('q', ''));
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = db()->prepare('INSERT INTO customers (first_name, last_name, phone, email, fiscal_code, birth_date, address, privacy_consent, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');

@@ -9,6 +9,41 @@ function app_config(string $key, mixed $default = null): mixed
     return $config[$key] ?? $default;
 }
 
+/**
+ * Ritaglia al centro un quadrato dall'immagine sorgente e la ridimensiona a
+ * $size x $size, restituendo bytes JPEG ottimizzati. Così la foto è già pronta
+ * e coerente in ogni punto dell'app (miniatura, card, modal) indipendentemente
+ * dalle proporzioni dello scatto originale, invece di affidarsi solo al
+ * ritaglio CSS in visualizzazione.
+ */
+function square_crop_image(string $bytes, int $size = 640, int $quality = 82): ?string
+{
+    $src = @imagecreatefromstring($bytes);
+    if (!$src) {
+        return null;
+    }
+
+    $srcW = imagesx($src);
+    $srcH = imagesy($src);
+    $cropSize = min($srcW, $srcH);
+    $srcX = (int) (($srcW - $cropSize) / 2);
+    $srcY = (int) (($srcH - $cropSize) / 2);
+
+    $dst = imagecreatetruecolor($size, $size);
+    $white = imagecolorallocate($dst, 255, 255, 255);
+    imagefill($dst, 0, 0, $white);
+    imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $size, $size, $cropSize, $cropSize);
+
+    ob_start();
+    imagejpeg($dst, null, $quality);
+    $out = ob_get_clean();
+
+    imagedestroy($src);
+    imagedestroy($dst);
+
+    return $out !== '' ? $out : null;
+}
+
 function db(): PDO
 {
     static $pdo = null;
@@ -75,6 +110,53 @@ function require_role(array|string $roles): void
     $adminOnly = ($roles === ['admin']);
     $allowed   = has_role($roles) || has_role('admin') || (!$adminOnly && has_role('gestore'));
     if (!$allowed) {
+        http_response_code(403);
+        include __DIR__ . '/../../views/errors/403.php';
+        exit;
+    }
+}
+
+/**
+ * Sezioni dell'app assegnabili singolarmente a un operatore (tutte tranne
+ * "Utenti", riservata all'admin). Chiave => etichetta mostrata nell'editor
+ * permessi in /utenti.
+ */
+function app_sections(): array
+{
+    return [
+        'dashboard' => 'Dashboard',
+        'clienti'   => 'Clienti',
+        'reception' => 'Reception (ingressi)',
+        'piscina'   => 'Mappa piscina',
+        'tariffe'   => 'Tariffe',
+        'food'      => 'Food (consumazioni)',
+        'cassa'     => 'Cassa',
+        'prodotti'  => 'Prodotti',
+        'report'    => 'Report',
+    ];
+}
+
+/**
+ * true se l'utente loggato può accedere alla sezione $key. Se l'admin non ha
+ * personalizzato i permessi dell'utente (permissions = null), vale il
+ * comportamento di sempre: la sezione è visibile a chiunque il ruolo lo
+ * consenta (require_role() nella rotta fa comunque da filtro). Con
+ * permissions valorizzato, invece, diventa una vera lista di sezioni
+ * abilitate per quello specifico operatore.
+ */
+function has_section(string $key): bool
+{
+    $user = current_user();
+    if (!$user) return false;
+    if (($user['role'] ?? null) === 'admin') return true;
+    $perms = $user['permissions'] ?? null;
+    if ($perms === null) return true;
+    return in_array($key, $perms, true);
+}
+
+function require_section(string $key): void
+{
+    if (!has_section($key)) {
         http_response_code(403);
         include __DIR__ . '/../../views/errors/403.php';
         exit;

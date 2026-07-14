@@ -400,10 +400,10 @@ try {
             SELECT p.id, p.code, p.row_label, p.number, p.type, p.base_price,
                    p.pos_row, p.pos_col, a.name area_name,
                    CASE
-                     WHEN ep_a.place_id IS NOT NULL THEN 'occupato'
-                     WHEN rp_a.place_id IS NOT NULL THEN 'prenotato-confermato'
+                     WHEN ep_a.place_id IS NOT NULL THEN 'riservato'
+                     WHEN rp_a.place_id IS NOT NULL THEN 'riservato'
                      WHEN p.status IN ('manutenzione','bloccato') THEN p.status
-                     ELSE 'disponibile'
+                     ELSE 'libero'
                    END day_status
             FROM pool_places p
             JOIN pool_areas a ON a.id = p.area_id
@@ -464,22 +464,11 @@ try {
                 rcard.card_code res_card_code,
                 CASE
                     WHEN ep_a.place_id IS NOT NULL THEN
-                        CASE entry_res.time_slot
-                            WHEN 'mattina'    THEN 'occupato-mattina'
-                            WHEN 'pomeriggio' THEN 'occupato-pomeriggio'
-                            ELSE 'occupato'
-                        END
+                        CASE WHEN ecard.current_balance <= 0.001 THEN 'pagato' ELSE 'riservato' END
                     WHEN rp_a.place_id IS NOT NULL THEN
-                        CASE
-                            WHEN r.status = 'confermata' AND r.time_slot = 'mattina'    THEN 'prenotato-confermato-mattina'
-                            WHEN r.status = 'confermata' AND r.time_slot = 'pomeriggio' THEN 'prenotato-confermato-pomeriggio'
-                            WHEN r.status = 'confermata'                                THEN 'prenotato-confermato'
-                            WHEN r.status = 'in attesa'  AND r.time_slot = 'mattina'    THEN 'prenotato-attesa-mattina'
-                            WHEN r.status = 'in attesa'  AND r.time_slot = 'pomeriggio' THEN 'prenotato-attesa-pomeriggio'
-                            ELSE 'prenotato-attesa'
-                        END
+                        CASE WHEN r.total_amount > 0 AND r.paid_amount >= r.total_amount THEN 'pagato' ELSE 'riservato' END
                     WHEN p.status IN ('manutenzione','bloccato') THEN p.status
-                    ELSE 'disponibile'
+                    ELSE 'libero'
                 END day_status
             FROM pool_places p
             JOIN pool_areas a ON a.id = p.area_id

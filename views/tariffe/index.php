@@ -46,6 +46,15 @@
 }
 #tf-toast.show { transform: translateX(-50%) translateY(0); }
 #tf-toast.err { background: var(--bad); }
+
+@media (max-width: 560px) {
+  .tf-page { padding: 14px 12px; }
+  .tf-row { flex-wrap: wrap; gap: 8px 14px; }
+  .tf-row-main { flex-basis: 100%; }
+  .tf-price-input { height: 40px; }
+  .tf-save-btn { height: 40px; flex: 1; }
+  .tf-active-toggle { order: 2; }
+}
 </style>
 
 <div class="tf-page">

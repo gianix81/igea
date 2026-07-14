@@ -182,6 +182,23 @@ body.ca-active main.app {
 .ca-flash { padding: 8px 12px; border-radius: 8px; font-size: 11.5px; margin: 10px 16px 0; flex-shrink: 0; }
 .ca-flash.ok   { background:color-mix(in srgb,var(--good) 10%,transparent); border:1px solid color-mix(in srgb,var(--good) 25%,transparent); color:var(--good); }
 .ca-flash.err  { background:color-mix(in srgb,var(--bad) 10%,transparent);  border:1px solid color-mix(in srgb,var(--bad) 25%,transparent);  color:var(--bad); }
+
+/* ── Mobile: torna scrollabile, colonna singola, azioni impilabili ── */
+@media (max-width: 860px) {
+  body.ca-active { overflow: visible !important; }
+  body.ca-active main.app { height: auto; overflow: visible; }
+  .ca-wrap { padding: 12px 12px 16px; }
+  .ca-main { grid-template-columns: 1fr; }
+  .ca-list-panel { max-height: 320px; }
+  .ca-detail-panel { min-height: 400px; }
+}
+@media (max-width: 640px) {
+  .ca-kpi-row { grid-template-columns: repeat(2,1fr); }
+  .ca-det-kpi { grid-template-columns: repeat(2,1fr); }
+  .ca-det-kpi-cell:nth-child(2) { border-right: none; }
+  .ca-pay-actions { flex-wrap: wrap; }
+  .ca-pay-actions .ca-btn { flex: 1 1 auto; min-height: 40px; }
+}
 </style>
 
 <script>document.body.classList.add('ca-active');</script>
@@ -355,6 +372,7 @@ function caColor(string $name, array $pal): string {
       <div class="ca-det-scroll">
         <?php if (!empty($movements)): ?>
         <div class="ca-section-lbl">Movimenti</div>
+        <div style="overflow-x:auto">
         <table class="ca-mov-table">
           <?php foreach (array_reverse($movements) as $m):
             $cancelled = $m['status'] === 'cancelled';
@@ -395,6 +413,7 @@ function caColor(string $name, array $pal): string {
           </tr>
           <?php endforeach; ?>
         </table>
+        </div>
         <?php else: ?>
         <div style="text-align:center;padding:20px;color:var(--muted-2);font-size:12px">Nessun movimento</div>
         <?php endif; ?>

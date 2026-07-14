@@ -23,18 +23,11 @@ $N_ROWS = $maxRow + 1;
 $N_COLS = $maxCol + 1;
 
 $statusColor = [
-    'disponibile'               => '#1a9e6c',
-    'prenotato-attesa'          => '#64b5f6',
-    'prenotato-attesa-mattina'  => '#64b5f6',
-    'prenotato-attesa-pomeriggio' => '#64b5f6',
-    'prenotato-confermato'      => '#e8a020',
-    'prenotato-confermato-mattina' => '#e8a020',
-    'prenotato-confermato-pomeriggio' => '#e8a020',
-    'occupato'                  => '#d9534f',
-    'occupato-mattina'          => '#d9534f',
-    'occupato-pomeriggio'       => '#d9534f',
-    'manutenzione'              => '#888',
-    'bloccato'                  => '#444',
+    'libero'      => '#1a9e6c',
+    'riservato'   => '#e8a020',
+    'pagato'      => '#17b3c4',
+    'manutenzione' => '#888',
+    'bloccato'    => '#444',
 ];
 ?>
 
@@ -251,6 +244,13 @@ $statusColor = [
 }
 .le-toast.show { transform: translateX(-50%) translateY(0); }
 .le-toast.err { background: var(--bad, #d9534f); }
+
+/* Nota: il posizionamento drag&drop resta pensato per mouse — su touch i lettini
+   restano visibili e selezionabili (elimina, dimensione) ma non trascinabili. */
+@media (max-width: 860px) {
+  .le-sz-btn { width: 40px; height: 40px; font-size: 1.1rem; }
+  .le-del-btn { width: 26px; height: 26px; font-size: 15px; }
+}
 </style>
 
 <div class="le-page">
@@ -261,10 +261,9 @@ $statusColor = [
 
     <div class="le-legend">
       <span class="le-dot" style="background:#1a9e6c"></span>Libero
-      <span class="le-dot" style="background:#e8a020"></span>Prenotato
-      <span class="le-dot" style="background:#64b5f6"></span>In attesa
-      <span class="le-dot" style="background:#d9534f"></span>Occupato
-      <span class="le-dot" style="background:#888"></span>N/D
+      <span class="le-dot" style="background:#e8a020"></span>Riservato
+      <span class="le-dot" style="background:#17b3c4"></span>Pagato
+      <span class="le-dot" style="background:#888"></span>Manut./Bloccato
     </div>
 
     <span class="le-hint">⟵ trascina i lettini per riposizionarli</span>
@@ -290,7 +289,7 @@ $statusColor = [
             <div class="le-cell <?= $seat ? 'has-seat' : 'empty' ?>"
                  data-row="<?= $r ?>" data-col="<?= $c ?>">
               <?php if ($seat):
-                $ds = $seat['day_status'] ?? 'disponibile';
+                $ds = $seat['day_status'] ?? 'libero';
                 $bg = $statusColor[$ds] ?? '#1a9e6c';
                 $lbl = strlen($seat['code']) > 1 ? substr($seat['code'], 1) : $seat['code'];
               ?>

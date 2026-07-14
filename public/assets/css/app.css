@@ -308,20 +308,13 @@ main.app { padding: 0; }
 }
 .lg-today-btn:hover { color: var(--text); background: var(--border); }
 
-/* Legenda */
+/* Legenda — 3 fasi: Libero, Riservato, Pagato */
 .lg-legend { display: flex; gap: 8px; align-items: center; }
 .ll-i { display: flex; align-items: center; gap: 3px; font-size: .72rem; color: var(--muted); }
 .ll-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 .ll-dot.ll-disp  { background: var(--good); }
-.ll-dot.ll-att   { background: #64b5f6; }
-.ll-dot.ll-att-m { background: linear-gradient(90deg, #64b5f6 50%, var(--good) 50%); }
-.ll-dot.ll-att-p { background: linear-gradient(90deg, var(--good) 50%, #64b5f6 50%); }
 .ll-dot.ll-pren  { background: #e8a020; }
-.ll-dot.ll-con-m { background: linear-gradient(90deg, #e8a020 50%, var(--good) 50%); }
-.ll-dot.ll-con-p { background: linear-gradient(90deg, var(--good) 50%, #e8a020 50%); }
-.ll-dot.ll-occ   { background: var(--bad); }
-.ll-dot.ll-occ-m { background: linear-gradient(90deg, var(--bad) 50%, var(--good) 50%); }
-.ll-dot.ll-occ-p { background: linear-gradient(90deg, var(--good) 50%, var(--bad) 50%); }
+.ll-dot.ll-occ   { background: var(--accent); }
 .ll-sep { color: var(--muted-2); font-size: .7rem; padding: 0 1px; }
 
 /* Zoom controls */
@@ -543,7 +536,7 @@ main.app { padding: 0; }
 
 /* Cursore speciale in modalità selezione mappa */
 .map-select-mode { cursor: crosshair !important; }
-.map-select-mode .seat-disponibile { outline: 2px dashed var(--accent); outline-offset: 1px; }
+.map-select-mode .seat-libero { outline: 2px dashed var(--accent); outline-offset: 1px; }
 
 /* Lettino selezionato per il form (distinto dall'highlight pulsante) */
 .seat-selected {
@@ -671,27 +664,15 @@ main.app { padding: 0; }
 .seat:hover { transform: scale(1.15); box-shadow: 0 4px 14px rgba(0,0,0,.22); z-index: 10; }
 .seat:active { transform: scale(1.07); }
 
-/* ── 10 stati lettino ── */
-/* 1. Libero */
+/* ── 3 stati lettino (rif. 3 nota 13/07/2026): Libero, Riservato, Pagato ── */
+.seat-libero    { background: var(--good); color: #fff; }
+.seat-riservato { background: #e8a020; color: #1c0e00; }
+.seat-pagato    { background: var(--accent); color: #fff; }
+
+/* Retrocompatibilità con valori residui non più prodotti da nessuna query */
 .seat-disponibile { background: var(--good); color: #fff; }
-
-/* 2–4. Prenotato in attesa — blu cielo */
-.seat-prenotato-attesa              { background: #64b5f6; color: #0c2d5a; }
-.seat-prenotato-attesa-mattina      { background: linear-gradient(90deg, #64b5f6 50%, var(--good) 50%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
-.seat-prenotato-attesa-pomeriggio   { background: linear-gradient(90deg, var(--good) 50%, #64b5f6 50%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
-
-/* 5–7. Prenotato confermato — arancio */
-.seat-prenotato-confermato              { background: #e8a020; color: #1c0e00; }
-.seat-prenotato-confermato-mattina      { background: linear-gradient(90deg, #e8a020 50%, var(--good) 50%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
-.seat-prenotato-confermato-pomeriggio   { background: linear-gradient(90deg, var(--good) 50%, #e8a020 50%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
-
-/* 8–10. Occupato — rosso */
-.seat-occupato              { background: var(--bad); color: #fff; }
-.seat-occupato-mattina      { background: linear-gradient(90deg, var(--bad) 50%, var(--good) 50%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
-.seat-occupato-pomeriggio   { background: linear-gradient(90deg, var(--good) 50%, var(--bad) 50%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
-
-/* Retrocompatibilità */
-.seat-prenotato { background: #e8a020; color: #1c0e00; }
+.seat-prenotato   { background: #e8a020; color: #1c0e00; }
+.seat-occupato    { background: var(--bad); color: #fff; }
 
 .seat-manutenzione,
 .seat-bloccato,
@@ -706,6 +687,20 @@ main.app { padding: 0; }
 .lg-map-full {
   border-right: none !important;
   padding-right: 0 !important;
+}
+
+/* ── Posti: mobile — toolbar affollata va in wrap, legenda diventa una striscia scorrevole ── */
+@media (max-width: 860px) {
+  .lg-page { padding: 6px 8px 4px; }
+  .lg-topbar-right { flex-wrap: wrap; row-gap: 6px; }
+  .lg-legend {
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    max-width: 100%; padding-bottom: 2px; scrollbar-width: none;
+  }
+  .lg-legend::-webkit-scrollbar { display: none; }
+  .ll-i { flex-shrink: 0; }
+  .res-sidebar { width: 100%; max-width: 100vw; }
+  .lg-body.sidebar-open { padding-right: 0; }
 }
 
 /* ── Pulsante sidebar topbar ── */
@@ -818,6 +813,10 @@ main.app { padding: 0; }
     padding: 10px 14px;
     font-size: 14px;
   }
+
+  /* Posti: la data nav e "Oggi" sono <a>, non <button> — non presi dalla regola sotto */
+  .lg-nav-btn { width: 40px; height: 40px; font-size: 1.3rem; }
+  .lg-today-btn { padding: 8px 12px; font-size: .8rem; }
 
   /* All buttons get minimum height */
   .btn, button:not([class*="btn-close"]) {

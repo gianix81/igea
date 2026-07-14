@@ -6,7 +6,11 @@
   gap: 18px;
   padding: 20px 22px;
 }
-@media (max-width: 900px) { .en-layout { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .en-layout { grid-template-columns: 1fr; padding: 14px; } }
+@media (max-width: 560px) {
+  .en-table th, .en-table td { white-space: nowrap; }
+  .en-row-2 { grid-template-columns: 1fr 1fr; }
+}
 
 /* Form panel */
 .en-panel {
@@ -122,7 +126,7 @@
   font-size: 18px; font-weight: 800; color: var(--text);
   margin-bottom: 14px;
 }
-.en-table-wrap { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; }
+.en-table-wrap { border: 1px solid var(--border); border-radius: 11px; overflow-x: auto; }
 .en-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .en-table thead th {
   padding: 9px 13px; background: var(--surface-2);

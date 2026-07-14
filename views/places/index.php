@@ -89,18 +89,10 @@ $statusLabel = ['confermata' => 'Confermata', 'in attesa' => 'In attesa', 'compl
 
     <div class="lg-legend">
       <span class="ll-i"><span class="ll-dot ll-disp"></span>Libero</span>
+      <span class="ll-i"><span class="ll-dot ll-pren"></span>Riservato</span>
+      <span class="ll-i"><span class="ll-dot ll-occ"></span>Pagato</span>
       <span class="ll-sep">·</span>
-      <span class="ll-i"><span class="ll-dot ll-att"></span>Att.</span>
-      <span class="ll-i"><span class="ll-dot ll-att-m"></span>Att.M</span>
-      <span class="ll-i"><span class="ll-dot ll-att-p"></span>Att.P</span>
-      <span class="ll-sep">·</span>
-      <span class="ll-i"><span class="ll-dot ll-pren"></span>Conf.</span>
-      <span class="ll-i"><span class="ll-dot ll-con-m"></span>Conf.M</span>
-      <span class="ll-i"><span class="ll-dot ll-con-p"></span>Conf.P</span>
-      <span class="ll-sep">·</span>
-      <span class="ll-i"><span class="ll-dot ll-occ"></span>Occ.</span>
-      <span class="ll-i"><span class="ll-dot ll-occ-m"></span>Occ.M</span>
-      <span class="ll-i"><span class="ll-dot ll-occ-p"></span>Occ.P</span>
+      <span class="ll-i"><span class="ll-dot" style="background:var(--muted-2)"></span>Manut./Bloccato</span>
     </div>
 
     <div id="mapSummary" class="d-flex gap-2 align-items-center"></div>
@@ -592,6 +584,20 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
 .res-cust-item:last-child{border-bottom:none;}
 .res-cust-item:hover{background:var(--surface-2,#f5f5f5);}
 .res-cust-item.no-result{color:var(--muted-2,#aaa);cursor:default;font-style:italic;}
+.res-cust-item.res-cust-create{color:var(--accent,#17b3c4);font-weight:700;}
+.res-cust-create-form{padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.res-cust-create-form input{
+  width:100%;box-sizing:border-box;padding:6px 9px;border-radius:6px;
+  border:1px solid var(--border,#ddd);background:var(--surface-2,#f5f5f5);
+  color:var(--text,#111);font-size:12.5px;font-family:inherit;outline:none;
+}
+.res-cust-create-actions{display:flex;gap:6px;margin-top:2px;}
+.res-cust-create-actions button{
+  flex:1;border:none;border-radius:6px;padding:6px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+}
+.res-cust-create-save{background:var(--accent,#17b3c4);color:#fff;}
+.res-cust-create-cancel{background:var(--surface-2,#eee);color:var(--muted,#666);}
+.res-cust-create-err{color:var(--bad,#c0392b);font-size:11px;}
 </style>
 
 <script>
@@ -608,6 +614,7 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
   const CANC_URL  = <?= json_encode(url('/api/places/cancel-reservation.php'), JSON_THROW_ON_ERROR) ?>;
   const EXTRA_URL = <?= json_encode(url('/api/places/create-extra.php'), JSON_THROW_ON_ERROR) ?>;
   const RELEASE_ALL_URL = <?= json_encode(url('/api/places/release-all.php'), JSON_THROW_ON_ERROR) ?>;
+  const QUICK_CREATE_URL = <?= json_encode(url('/api/customers/quick-create.php'), JSON_THROW_ON_ERROR) ?>;
   const PLACES_URL = <?= json_encode(url('/places'), JSON_THROW_ON_ERROR) ?>;
   let currentDate  = <?= json_encode($date, JSON_THROW_ON_ERROR) ?>;
 
@@ -791,7 +798,7 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     if (seatSelectMode) {
       const cls    = [...btn.classList].find(c => c.startsWith('seat-') && !['seat-highlight','seat-selected'].includes(c));
       const status = cls ? cls.replace('seat-', '') : '';
-      if (status !== 'disponibile') {
+      if (status !== 'libero') {
         return; // solo liberi
       }
       const id   = btn.dataset.id;
@@ -819,6 +826,64 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     const inp = document.getElementById(inputId);
     const dd  = document.getElementById(dropdownId);
     if (!inp) return;
+
+    function selectCustomer(c) {
+      document.getElementById(hiddenId).value = c.id;
+      document.getElementById(inputId).value  = c.last_name + ' ' + c.first_name;
+      const bd = c.birth_date ? new Date(c.birth_date + 'T00:00:00').toLocaleDateString('it-IT') : '';
+      document.getElementById(infoId).textContent = (c.phone || '') + (bd ? (c.phone ? ' · ' : '') + 'Nato/a il ' + bd : '');
+      dd.style.display = 'none';
+    }
+
+    function renderCreateForm(query) {
+      dd.innerHTML = `<div class="res-cust-create-form">
+        <input type="text" class="rc-first" placeholder="Nome">
+        <input type="text" class="rc-last" placeholder="Cognome" value="${esc(query)}">
+        <input type="text" class="rc-phone" placeholder="Telefono (opzionale)">
+        <div class="res-cust-create-err d-none"></div>
+        <div class="res-cust-create-actions">
+          <button type="button" class="res-cust-create-cancel">Annulla</button>
+          <button type="button" class="res-cust-create-save">Crea e seleziona</button>
+        </div>
+      </div>`;
+      const errEl = dd.querySelector('.res-cust-create-err');
+      dd.querySelector('.rc-first').focus();
+      dd.querySelector('.res-cust-create-cancel').addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        dd.style.display = 'none';
+      });
+      dd.querySelector('.res-cust-create-save').addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        const first_name = dd.querySelector('.rc-first').value.trim();
+        const last_name  = dd.querySelector('.rc-last').value.trim();
+        const phone      = dd.querySelector('.rc-phone').value.trim();
+        if (!first_name || !last_name) {
+          errEl.textContent = 'Nome e cognome sono obbligatori.';
+          errEl.classList.remove('d-none');
+          return;
+        }
+        fetch(QUICK_CREATE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ first_name, last_name, phone, _csrf: CSRF }).toString()
+        })
+        .then(r => r.json())
+        .then(function (resp) {
+          if (resp.success) {
+            ALL_CUSTOMERS.push(resp.customer);
+            selectCustomer(resp.customer);
+          } else {
+            errEl.textContent = resp.error || 'Errore imprevisto.';
+            errEl.classList.remove('d-none');
+          }
+        })
+        .catch(function () {
+          errEl.textContent = 'Errore di rete.';
+          errEl.classList.remove('d-none');
+        });
+      });
+    }
+
     inp.addEventListener('input', function () {
       const q = inp.value.trim().toLowerCase();
       document.getElementById(hiddenId).value = '';
@@ -829,8 +894,9 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
         c.first_name.toLowerCase().includes(q) ||
         c.last_name.toLowerCase().includes(q)
       ).slice(0, 8);
+      const createRow = `<div class="res-cust-item res-cust-create">+ Crea nuovo cliente "${esc(inp.value.trim())}"</div>`;
       if (!hits.length) {
-        dd.innerHTML = '<div class="res-cust-item no-result">Nessun cliente trovato</div>';
+        dd.innerHTML = '<div class="res-cust-item no-result">Nessun cliente trovato</div>' + createRow;
       } else {
         dd.innerHTML = hits.map(c => {
           const bd = c.birth_date ? ' · ' + new Date(c.birth_date + 'T00:00:00').toLocaleDateString('it-IT') : '';
@@ -838,18 +904,21 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
           return `<div class="res-cust-item" data-id="${c.id}" data-last="${esc(c.last_name)}" data-first="${esc(c.first_name)}" data-bd="${c.birth_date||''}" data-phone="${esc(c.phone||'')}">
             <strong>${esc(c.last_name)} ${esc(c.first_name)}</strong>${ph}${bd ? '<span class="text-muted"> '+bd+'</span>' : ''}
           </div>`;
-        }).join('');
+        }).join('') + createRow;
         dd.querySelectorAll('.res-cust-item[data-id]').forEach(el => {
           el.addEventListener('mousedown', function (e) {
             e.preventDefault();
-            document.getElementById(hiddenId).value = el.dataset.id;
-            document.getElementById(inputId).value  = el.dataset.last + ' ' + el.dataset.first;
-            const bd = el.dataset.bd ? new Date(el.dataset.bd + 'T00:00:00').toLocaleDateString('it-IT') : '';
-            document.getElementById(infoId).textContent = (el.dataset.phone || '') + (bd ? (el.dataset.phone ? ' · ' : '') + 'Nato/a il ' + bd : '');
-            dd.style.display = 'none';
+            selectCustomer({
+              id: el.dataset.id, last_name: el.dataset.last, first_name: el.dataset.first,
+              birth_date: el.dataset.bd || null, phone: el.dataset.phone || '',
+            });
           });
         });
       }
+      dd.querySelector('.res-cust-create').addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        renderCreateForm(inp.value.trim());
+      });
       dd.style.display = '';
     });
     inp.addEventListener('blur', function () { setTimeout(() => { dd.style.display = 'none'; }, 150); });
@@ -1106,56 +1175,49 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
   }
 
   function renderDetail(p) {
+    // 3 fasi (rif. 3): Libero, Riservato, Pagato. Le azioni dipendono da cosa c'è dietro
+    // al posto (un ingresso già arrivato vs. una prenotazione non ancora arrivata), non
+    // dal solo colore mostrato.
     const badgeCls = {
-      disponibile: 'bg-success', prenotato: 'text-dark" style="background:#e8a020',
-      'prenotato-attesa': 'text-dark" style="background:#64b5f6',
-      'prenotato-confermato': 'text-dark" style="background:#e8a020',
-      'prenotato-attesa-mattina': 'text-dark" style="background:#64b5f6',
-      'prenotato-attesa-pomeriggio': 'text-dark" style="background:#64b5f6',
-      'prenotato-confermato-mattina': 'text-dark" style="background:#e8a020',
-      'prenotato-confermato-pomeriggio': 'text-dark" style="background:#e8a020',
-      occupato: 'bg-danger', 'occupato-mattina': 'bg-danger', 'occupato-pomeriggio': 'bg-danger',
+      libero: 'bg-success',
+      riservato: 'text-dark" style="background:#e8a020',
+      pagato: 'text-white" style="background:var(--accent)',
       manutenzione: 'bg-secondary', bloccato: 'bg-dark',
     };
-    const statusLabel = p.day_status.startsWith('prenotato-confermato') ? 'Prenotato (confermato)'
-      : p.day_status.startsWith('prenotato-attesa') ? 'Prenotato (in attesa)'
-      : p.day_status.startsWith('occupato') ? 'Occupato'
-      : p.day_status;
+    const statusLabel = { libero: 'Libero', riservato: 'Riservato', pagato: 'Pagato', manutenzione: 'Manutenzione', bloccato: 'Bloccato' }[p.day_status] ?? p.day_status;
     let body = `<div class="d-flex align-items-center gap-2 mb-3">
       <span class="fw-bold" style="font-size:1.3rem;font-family:'Poppins',sans-serif;color:var(--accent)">${esc(p.code)}</span>
       <span class="badge ${badgeCls[p.day_status] ?? 'bg-secondary'}">${esc(statusLabel)}</span>
       <span class="ms-auto text-muted small">${esc(p.area_name)}</span>
     </div>`;
-    if (p.day_status.startsWith('occupato') && p.entry_customer_name) {
+    if (p.entry_id && p.entry_customer_name) {
       body += `<div class="lg-info-card lg-info-occ">
         <div class="fw-semibold">${esc(p.entry_customer_name)}</div>
         <div class="small text-muted">Card: <span class="font-monospace fw-bold">${esc(p.entry_card_code ?? '—')}</span></div>
         ${p.entry_customer_phone ? `<div class="small text-muted">Tel: ${esc(p.entry_customer_phone)}</div>` : ''}
         ${p.checkin_at ? `<div class="small text-muted">Check-in: ${esc(p.checkin_at.substring(11,16))}</div>` : ''}
       </div>`;
-    }
-    if (p.day_status.startsWith('prenotato') && p.res_customer_name) {
+    } else if (p.reservation_id && p.res_customer_name) {
       body += `<div class="lg-info-card lg-info-res">
         <div class="fw-semibold">${esc(p.res_customer_name)}</div>
         <div class="small text-muted">Cod.: <span class="font-monospace fw-bold">${esc(p.reservation_code ?? '—')}</span></div>
         ${p.res_customer_phone ? `<div class="small text-muted">Tel: ${esc(p.res_customer_phone)}</div>` : ''}
         ${p.time_slot ? `<div class="small text-muted">Fascia: ${esc(p.time_slot)}</div>` : ''}
       </div>`;
-    }
-    if (p.day_status === 'disponibile') {
+    } else if (p.day_status === 'libero') {
       body += `<p class="text-muted small mb-0">Nessuna assegnazione per questa data.</p>`;
     }
     document.getElementById('seatModalBody').innerHTML = body;
 
     let footer = '<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Chiudi</button>';
-    if (p.day_status === 'disponibile') {
-      footer += `<button class="btn btn-success btn-sm" onclick="openAssign(${p.id},'${esc(p.code)}')">Assegna</button>`;
-      footer += `<button class="btn btn-warning btn-sm" onclick="bookFromSeat(${p.id},'${esc(p.code)}')">Prenota</button>`;
-    } else if (p.day_status.startsWith('prenotato')) {
+    if (p.entry_id) {
+      footer += `<button class="btn btn-outline-danger btn-sm" onclick="doRelease(${p.id})">Libera lettino</button>`;
+    } else if (p.reservation_id) {
       footer += `<button class="btn btn-success btn-sm" onclick="openAssign(${p.id},'${esc(p.code)}')">Check-in</button>`;
       footer += `<button class="btn btn-outline-danger btn-sm" onclick="doCancelPlace(${p.reservation_id})">Cancella prenotazione</button>`;
-    } else if (p.day_status.startsWith('occupato')) {
-      footer += `<button class="btn btn-outline-danger btn-sm" onclick="doRelease(${p.id})">Libera lettino</button>`;
+    } else if (p.day_status === 'libero') {
+      footer += `<button class="btn btn-success btn-sm" onclick="openAssign(${p.id},'${esc(p.code)}')">Assegna</button>`;
+      footer += `<button class="btn btn-warning btn-sm" onclick="bookFromSeat(${p.id},'${esc(p.code)}')">Prenota</button>`;
     }
     document.getElementById('seatModalFooter').innerHTML = footer;
   }
@@ -1284,12 +1346,7 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
   }
 
   function applyStatuses(places) {
-    const all = ['disponibile',
-      'prenotato','prenotato-attesa','prenotato-confermato',
-      'prenotato-attesa-mattina','prenotato-attesa-pomeriggio',
-      'prenotato-confermato-mattina','prenotato-confermato-pomeriggio',
-      'occupato','occupato-mattina','occupato-pomeriggio',
-      'manutenzione','bloccato','liberato','nd'];
+    const all = ['libero', 'riservato', 'pagato', 'manutenzione', 'bloccato', 'liberato', 'nd'];
     places.forEach(p => {
       const btn = document.querySelector(`.seat[data-id="${p.id}"]`);
       if (!btn) return;
@@ -1302,16 +1359,14 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
   function updateSummary(places) {
     const c = {};
     places.forEach(p => { c[p.day_status] = (c[p.day_status] ?? 0) + 1; });
-    const liberi   = c['disponibile'] ?? 0;
-    const attesa   = (c['prenotato-attesa'] ?? 0) + (c['prenotato-attesa-mattina'] ?? 0) + (c['prenotato-attesa-pomeriggio'] ?? 0);
-    const conferm  = (c['prenotato-confermato'] ?? 0) + (c['prenotato-confermato-mattina'] ?? 0) + (c['prenotato-confermato-pomeriggio'] ?? 0) + (c['prenotato'] ?? 0);
-    const occupati = (c['occupato'] ?? 0) + (c['occupato-mattina'] ?? 0) + (c['occupato-pomeriggio'] ?? 0);
+    const liberi    = c['libero'] ?? 0;
+    const riservati = c['riservato'] ?? 0;
+    const pagati    = c['pagato'] ?? 0;
     const el = document.getElementById('mapSummary');
     el.innerHTML = '';
-    if (liberi)   el.innerHTML += `<span class="badge px-2 py-1" style="font-size:.72rem;background:var(--good);color:#fff">Liberi <strong>${liberi}</strong></span>`;
-    if (attesa)   el.innerHTML += `<span class="badge px-2 py-1" style="font-size:.72rem;background:#64b5f6;color:#0c2d5a">In attesa <strong>${attesa}</strong></span>`;
-    if (conferm)  el.innerHTML += `<span class="badge px-2 py-1" style="font-size:.72rem;background:#e8a020;color:#1c0e00">Confermati <strong>${conferm}</strong></span>`;
-    if (occupati) el.innerHTML += `<span class="badge px-2 py-1" style="font-size:.72rem;background:var(--bad);color:#fff">Occupati <strong>${occupati}</strong></span>`;
+    if (liberi)    el.innerHTML += `<span class="badge px-2 py-1" style="font-size:.72rem;background:var(--good);color:#fff">Liberi <strong>${liberi}</strong></span>`;
+    if (riservati) el.innerHTML += `<span class="badge px-2 py-1" style="font-size:.72rem;background:#e8a020;color:#1c0e00">Riservati <strong>${riservati}</strong></span>`;
+    if (pagati)    el.innerHTML += `<span class="badge px-2 py-1" style="font-size:.72rem;background:var(--accent);color:#fff">Pagati <strong>${pagati}</strong></span>`;
   }
 
   function esc(s) {

@@ -137,7 +137,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
 .rp-dept-pct { color: var(--muted-2); font-size: 9px; white-space: nowrap; }
 
 /* Tables */
-.rp-table-wrap { overflow-y: auto; flex: 1; min-height: 0; }
+.rp-table-wrap { overflow-y: auto; overflow-x: auto; flex: 1; min-height: 0; }
 .rp-tbl { width: 100%; border-collapse: collapse; font-size: 11px; }
 .rp-tbl th { padding: 5px 10px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; background: var(--surface-2); }
 .rp-tbl td { padding: 6px 10px; color: var(--text); border-bottom: 1px solid var(--border); }
@@ -156,6 +156,19 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
 /* Bar inline for products */
 .bar-track-sm { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; max-width: 60px; }
 .bar-fill-sm  { height: 100%; border-radius: 2px; }
+
+/* ── Mobile: pagina scrollabile, grafici con altezza propria invece di flex:1 su un contenitore a 0 ── */
+@media (max-width: 900px) {
+  .rp-page { height: auto; overflow: visible; }
+  .rp-period { flex-wrap: wrap; row-gap: 6px; }
+  .rp-period-info { margin-left: 0; width: 100%; }
+  .rp-box.grow { flex: none !important; }
+  .rp-chart-wrap { height: 260px; }
+  .rp-table-wrap { max-height: 320px; }
+}
+@media (max-width: 640px) {
+  .rp-kpi-grid { grid-template-columns: repeat(2,1fr); }
+}
 </style>
 
 <div class="rp-page">

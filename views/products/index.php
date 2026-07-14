@@ -88,7 +88,7 @@ foreach ($categories as $c) {
 /* ── Panel / table ────────────────────────────────────────────── */
 .cat-panel {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 14px; overflow: hidden;
+  border-radius: 14px; overflow-x: auto;
 }
 .cat-table { width: 100%; border-collapse: collapse; }
 .cat-table th {
@@ -200,6 +200,13 @@ foreach ($categories as $c) {
 }
 #pg-toast.show { transform: translateX(-50%) translateY(0); }
 #pg-toast.err  { background: var(--bad); }
+
+@media (max-width: 640px) {
+  .cat-page { padding: 14px; }
+  .cat-search { margin-left: 0; width: 100%; }
+  .cat-search input { width: 100%; }
+  .cat-table th, .cat-table td { white-space: nowrap; }
+}
 </style>
 
 <div class="cat-page">

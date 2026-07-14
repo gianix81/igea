@@ -181,6 +181,29 @@ body.db-active main.app {
 .db-cal-day:hover { background:var(--surface-2); color:var(--text); }
 .db-cal-day.today { background:var(--accent); color:#fff; font-weight:800; }
 .db-cal-day.empty { pointer-events:none; }
+
+/* ── Mobile: la dashboard smette di essere "a schermo fisso" e torna scrollabile ── */
+@media (max-width: 860px) {
+  body.db-active { overflow: visible !important; }
+  body.db-active main.app {
+    height: auto;
+    overflow: visible;
+  }
+  .db-wrap { padding: 14px 14px 20px; }
+  .db-bottom {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .db-panel { min-height: 220px; }
+  .db-feed { max-height: 320px; }
+}
+@media (max-width: 640px) {
+  .db-greeting { flex-wrap: wrap; gap: 6px; }
+  .db-greeting-name { font-size: 22px; }
+  .db-clock { font-size: 30px; }
+  .db-tiles { grid-template-columns: 1fr; }
+  .db-tile-stat-v { font-size: 24px; }
+}
 </style>
 
 <script>document.body.classList.add('db-active');</script>

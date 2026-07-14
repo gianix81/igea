@@ -414,6 +414,15 @@ function cu_initials(string $first, string $last): string {
   font-size:.9rem; z-index:9999; transition:transform .25s; pointer-events:none;
   font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,.2);
 }
+
+/* Tabelle: mai più larghe dello schermo, scroll orizzontale se serve */
+.cu-table-wrap { overflow-x: auto; }
+
+@media (max-width: 640px) {
+  .cu-page { padding: 14px; }
+  .cu-table th, .cu-table td,
+  .cu-mov-table th, .cu-mov-table td { white-space: nowrap; }
+}
 </style>
 
 <div class="cu-page">

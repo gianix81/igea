@@ -39,6 +39,11 @@
 }
 #ut-toast.show { transform: translateX(-50%) translateY(0); }
 #ut-toast.err { background: var(--bad); }
+
+@media (max-width: 560px) {
+  .ut-page { padding: 14px 12px; }
+  .ut-table th, .ut-table td { white-space: nowrap; }
+}
 </style>
 
 <div class="ut-page">
@@ -48,7 +53,7 @@
   </div>
   <div class="ut-sub">Il "gestore" ha accesso operativo pieno come l'amministratore, tranne qui e le eliminazioni permanenti.</div>
 
-  <div class="ut-panel">
+  <div class="ut-panel" style="overflow-x:auto">
     <table class="ut-table">
       <thead>
         <tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Stato</th></tr>

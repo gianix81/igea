@@ -25,7 +25,6 @@ $navItems = [
         'main'     => true,
         'children' => [
             ['href' => '/bar',    'label' => 'Consumazioni',  'icon' => '🍹'],
-            ['href' => '/scheda', 'label' => 'Schede attive', 'icon' => '📋'],
         ],
     ],
     ['href' => '/cashdesk', 'label' => 'Cassa', 'main' => true],

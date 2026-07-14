@@ -364,7 +364,7 @@
   function doSearch(q) {
     if (q === _lastQ) return;
     _lastQ = q;
-    fetch('<?= url('/api/customers/search') ?>?q=' + encodeURIComponent(q))
+    fetch('<?= url('/api/customers/search.php') ?>?q=' + encodeURIComponent(q))
       .then(function(r){ return r.json(); })
       .then(function(d){ renderOptions(d.results || []); });
   }

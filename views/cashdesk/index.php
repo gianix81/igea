@@ -253,10 +253,10 @@ function caColor(string $name, array $pal): string {
            data-full-name="<?= e($acc['customer_name']) ?>"
            data-card-code="<?= e($acc['card_code']) ?>"
            data-is-inside="<?= $inside ? '1' : '0' ?>"
-           data-photo="<?= $acc['photo_path'] ? e(url('/assets/uploads/customers/' . basename($acc['photo_path']))) : '' ?>">
+           data-photo="<?= $acc['photo_path'] ? e(url('/' . ltrim($acc['photo_path'], '/'))) : '' ?>">
           <div class="ca-acc-avatar" style="background:<?= $color ?>">
             <?php if ($acc['photo_path']): ?>
-            <img src="<?= url('/assets/uploads/customers/' . basename($acc['photo_path'])) ?>" alt="">
+            <img src="<?= url('/' . ltrim($acc['photo_path'], '/')) ?>" alt="">
             <?php else: ?><?= $initials ?><?php endif; ?>
           </div>
           <div class="ca-acc-info">
@@ -313,7 +313,7 @@ function caColor(string $name, array $pal): string {
       <div class="ca-det-head">
         <div class="ca-det-avatar" style="background:<?= $color ?>">
           <?php if ($card['photo_path'] ?? null): ?>
-          <img src="<?= url('/assets/uploads/customers/' . basename($card['photo_path'])) ?>" alt="">
+          <img src="<?= url('/' . ltrim($card['photo_path'], '/')) ?>" alt="">
           <?php else: ?><?= $initials ?><?php endif; ?>
         </div>
         <div>

@@ -343,6 +343,26 @@ function cu_initials(string $first, string $last): string {
 }
 .cu-back-btn:hover { border-color:var(--accent); color:var(--accent); }
 
+/* Delete movement button */
+.cu-mov-del {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:7px; cursor:pointer;
+  border:1.5px solid var(--border); background:var(--surface); color:var(--muted-2);
+  transition:all .12s;
+}
+.cu-mov-del:hover { border-color:var(--bad); color:var(--bad); background:color-mix(in srgb, var(--bad) 8%, var(--surface)); }
+
+/* Copy card code button */
+.cu-copy-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:7px; cursor:pointer;
+  border:1.5px solid var(--border); background:var(--surface);
+  color:var(--muted); font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.05em; transition:all .12s;
+}
+.cu-copy-btn:hover { border-color:var(--accent); color:var(--accent); }
+.cu-copy-btn.copied { border-color:var(--good); color:var(--good); }
+
 /* Toast */
 #cu-toast {
   position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(80px);
@@ -388,12 +408,6 @@ function cu_initials(string $first, string $last): string {
     <div class="cu-kpi-num">€&nbsp;<?= number_format($stat_balance, 2, ',', '.') ?></div>
     <div class="cu-kpi-label">Saldo aperto totale</div>
   </div>
-  <?php if ($stat_blacklist): ?>
-  <div class="cu-kpi kpi-purple">
-    <div class="cu-kpi-num"><?= $stat_blacklist ?></div>
-    <div class="cu-kpi-label">Blacklist</div>
-  </div>
-  <?php endif; ?>
 </div>
 
 <!-- Toolbar: pills + search + new button -->
@@ -402,7 +416,6 @@ function cu_initials(string $first, string $last): string {
     <span class="cu-pill active" data-filter="tutti">Tutti (<?= count($customers ?? []) ?>)</span>
     <span class="cu-pill" data-filter="attivo">Attivi</span>
     <span class="cu-pill pill-warn" data-filter="sospeso">Sospesi</span>
-    <span class="cu-pill pill-danger" data-filter="blacklist">Blacklist</span>
   </div>
   <div class="cu-search-wrap">
     <input type="text" id="cuSearch" placeholder="Cerca nome, telefono, email, CF, stato…" value="<?= e($q ?? '') ?>" autocomplete="off">
@@ -442,7 +455,7 @@ function cu_initials(string $first, string $last): string {
     </thead>
     <tbody>
     <?php foreach ($customers as $c):
-      $fullName = $c['last_name'] . ' ' . $c['first_name'];
+      $fullName = mb_convert_case($c['last_name'] . ' ' . $c['first_name'], MB_CASE_TITLE, 'UTF-8');
       $initials = cu_initials($c['first_name'], $c['last_name']);
       $bgColor  = cu_avatar_color($fullName);
       $bal      = (float)$c['total_balance'];
@@ -469,7 +482,14 @@ function cu_initials(string $first, string $last): string {
         data-search="<?= e($searchHaystack) ?>"
         onclick="location.href='<?= url('/customers?id=' . (int)$c['id']) ?>'">
       <td>
-        <div class="cu-avatar" style="background:<?= $bgColor ?>"><?= $initials ?></div>
+        <?php if (!empty($c['photo_path'])): ?>
+          <div class="cu-avatar" style="padding:0;overflow:hidden">
+            <img src="<?= url('/' . e($c['photo_path'])) ?>" alt="<?= e($initials) ?>"
+                 style="width:100%;height:100%;object-fit:cover">
+          </div>
+        <?php else: ?>
+          <div class="cu-avatar" style="background:<?= $bgColor ?>"><?= $initials ?></div>
+        <?php endif; ?>
       </td>
       <td>
         <div style="font-weight:700;font-size:15px"><?= e($fullName) ?></div>
@@ -520,7 +540,7 @@ function cu_initials(string $first, string $last): string {
      DETAIL
 ═══════════════════════════════════════════════════════════════ -->
 <?php
-  $fullName  = $customer['last_name'] . ' ' . $customer['first_name'];
+  $fullName  = mb_convert_case($customer['last_name'] . ' ' . $customer['first_name'], MB_CASE_TITLE, 'UTF-8');
   $initials  = cu_initials($customer['first_name'], $customer['last_name']);
   $avatarBg  = cu_avatar_color($fullName);
   $totalBal  = array_sum(array_column($cards ?? [], 'current_balance'));
@@ -716,6 +736,10 @@ function cu_initials(string $first, string $last): string {
       <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">
         Movimenti — <?= e($selectedCard['card_code']) ?>
       </div>
+      <button type="button" class="cu-copy-btn" data-code="<?= e($selectedCard['card_code']) ?>" onclick="copyCardCode(this)" title="Copia numero scheda">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copia
+      </button>
       <span class="cu-badge cu-badge-blue"><?= count($movements) ?></span>
     </div>
     <div class="cu-table-wrap">
@@ -728,6 +752,7 @@ function cu_initials(string $first, string $last): string {
             <th>Descrizione</th>
             <th class="text-end">Importo</th>
             <th class="text-center">Stato</th>
+            <th class="text-end" style="width:70px"></th>
           </tr>
         </thead>
         <tbody>
@@ -753,6 +778,18 @@ function cu_initials(string $first, string $last): string {
             <span class="cu-badge <?= $m['status']==='open'?'cu-badge-yellow':($m['status']==='paid'?'cu-badge-green':'cu-badge-gray') ?>">
               <?= e($m['status']) ?>
             </span>
+          </td>
+          <td class="text-end">
+            <?php if ($cancelled): ?>
+              <span style="font-size:10px;color:var(--muted-2)">annullato</span>
+            <?php else: ?>
+              <button type="button" class="cu-mov-del"
+                      data-id="<?= (int)$m['id'] ?>"
+                      data-desc="<?= e($mt['label'] . ' · €' . number_format((float)$m['total_amount'],2,',','.')) ?>"
+                      onclick="deleteMovement(this)" title="Elimina movimento">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            <?php endif; ?>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -808,11 +845,11 @@ function cu_initials(string $first, string $last): string {
         <div class="row g-3">
           <div class="col-sm-6 col-md-3">
             <div class="cu-field-label">Nome</div>
-            <div class="cu-field-value"><?= e($customer['first_name'] ?: '—') ?></div>
+            <div class="cu-field-value"><?= $customer['first_name'] ? e(mb_convert_case($customer['first_name'], MB_CASE_TITLE, 'UTF-8')) : '—' ?></div>
           </div>
           <div class="col-sm-6 col-md-3">
             <div class="cu-field-label">Cognome</div>
-            <div class="cu-field-value"><?= e($customer['last_name'] ?: '—') ?></div>
+            <div class="cu-field-value"><?= $customer['last_name'] ? e(mb_convert_case($customer['last_name'], MB_CASE_TITLE, 'UTF-8')) : '—' ?></div>
           </div>
           <div class="col-sm-6 col-md-3">
             <div class="cu-field-label">Data di nascita</div>
@@ -942,7 +979,6 @@ function cu_initials(string $first, string $last): string {
                 <select class="form-select" id="ec_status">
                   <option value="attivo"    <?= $customer['status']==='attivo'    ?'selected':'' ?>>Attivo</option>
                   <option value="sospeso"   <?= $customer['status']==='sospeso'   ?'selected':'' ?>>Sospeso</option>
-                  <option value="blacklist" <?= $customer['status']==='blacklist' ?'selected':'' ?>>Blacklist</option>
                 </select></div>
               <div class="col-md-6 d-flex align-items-end">
                 <div class="form-check pb-1">
@@ -1064,6 +1100,7 @@ const CSRF              = <?= json_encode(csrf_token()) ?>;
 const UPD_CUSTOMER_URL  = '<?= url('/api/customers/update.php') ?>';
 const DEL_CUSTOMER_URL  = '<?= url('/api/customers/delete.php') ?>';
 const UPD_CARD_URL      = '<?= url('/api/customers/update-card.php') ?>';
+const DEL_MOVEMENT_URL  = '<?= url('/api/scheda/storna-consumazione.php') ?>';
 const CUSTOMER_ID       = <?= isset($customer) ? (int)$customer['id'] : 'null' ?>;
 var _ecCameraStream     = null;
 
@@ -1076,6 +1113,48 @@ function toast(msg, isErr) {
   el.style.transform = 'translateX(-50%) translateY(0)';
   clearTimeout(_toTimer);
   _toTimer = setTimeout(function() { el.style.transform = 'translateX(-50%) translateY(80px)'; }, 2800);
+}
+
+/* Copy card code to clipboard */
+function copyCardCode(btn) {
+  var code = btn.getAttribute('data-code') || '';
+  function done() {
+    var original = btn.innerHTML;
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiato';
+    toast('✓ Numero scheda copiato');
+    setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = original; }, 1800);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(done).catch(function(){ fallbackCopy(code); done(); });
+  } else {
+    fallbackCopy(code); done();
+  }
+}
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
+
+/* Delete (storno) a movement */
+function deleteMovement(btn) {
+  var id   = btn.getAttribute('data-id');
+  var desc = btn.getAttribute('data-desc') || '';
+  if (!confirm('Eliminare questo movimento?\n' + desc + '\nIl saldo verrà ricalcolato. Operazione non reversibile.')) return;
+  btn.disabled = true;
+  fetch(DEL_MOVEMENT_URL, { method:'POST', body: new URLSearchParams({ _csrf: CSRF, movement_id: id }) })
+  .then(function(r){ return r.json(); }).then(function(resp) {
+    if (resp.success) {
+      toast('✓ Movimento eliminato');
+      setTimeout(function(){ location.reload(); }, 600);
+    } else {
+      btn.disabled = false;
+      toast('Errore: ' + (resp.error || 'sconosciuto'), true);
+    }
+  }).catch(function(){ btn.disabled = false; toast('Errore di rete.', true); });
 }
 
 /* Live search + status filter pills (list view) */

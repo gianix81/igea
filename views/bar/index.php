@@ -353,7 +353,7 @@ $deptKeys = array_keys($depts);
 </div>
 
 <script>
-const SEARCH_URL = '<?= url('/api/bar/search-card') ?>';
+const SEARCH_URL = '<?= url('/api/bar/search-card.php') ?>';
 
 /* ── Avatar helpers ──────────────────────────────────────── */
 function avatarColor(name) {
@@ -384,6 +384,9 @@ function renderDd(results, label) {
   results.forEach(function(r) {
     var col = avatarColor(r.customer_name);
     var ini = initials(r.customer_name);
+    var avatarHtml = r.photo_url
+      ? '<div class="bar-dd-avatar" style="padding:0;overflow:hidden"><img src="' + r.photo_url + '" alt="" style="width:100%;height:100%;object-fit:cover"></div>'
+      : '<div class="bar-dd-avatar" style="background:' + col + '">' + ini + '</div>';
     var balHtml = r.balance > 0
       ? '<span class="bar-dd-bal-open">€ ' + r.balance.toFixed(2).replace('.',',') + '</span>'
       : '<span class="bar-dd-bal-ok">✓ Saldato</span>';
@@ -391,7 +394,7 @@ function renderDd(results, label) {
       ? '<span class="bar-dd-inside">● DENTRO</span>'
       : '<span class="bar-dd-outside">○ fuori</span>';
     html += '<button type="button" class="bar-dd-item" data-code="' + r.card_code + '">'
-      + '<div class="bar-dd-avatar" style="background:' + col + '">' + ini + '</div>'
+      + avatarHtml
       + '<div style="flex:1;min-width:0">'
       + '<div class="bar-dd-name">' + r.customer_name + '</div>'
       + '<div class="bar-dd-sub">' + (r.phone ? '📞 ' + r.phone + ' · ' : '') + r.card_code + '</div>'

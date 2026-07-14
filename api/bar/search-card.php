@@ -19,7 +19,8 @@ if ($q === '') {
             c.is_inside,
             cu.first_name,
             cu.last_name,
-            cu.phone
+            cu.phone,
+            cu.photo_path
         FROM cards c
         JOIN customers cu ON cu.id = c.customer_id
         $todayJoin
@@ -30,6 +31,8 @@ if ($q === '') {
     ");
     $stmt->execute();
 } else {
+    // Ricerca per testo: cerca tra TUTTE le card attive (non solo gli ingressi di oggi),
+    // così è possibile selezionare un cliente anche per nome/telefono/CF.
     $like = '%' . $q . '%';
     $stmt = db()->prepare("
         SELECT
@@ -40,10 +43,10 @@ if ($q === '') {
             c.is_inside,
             cu.first_name,
             cu.last_name,
-            cu.phone
+            cu.phone,
+            cu.photo_path
         FROM cards c
         JOIN customers cu ON cu.id = c.customer_id
-        $todayJoin
         WHERE c.status = 'attiva'
           AND cu.status = 'attivo'
           AND (
@@ -71,6 +74,7 @@ foreach ($rows as $r) {
         'phone'         => $r['phone'] ?? '',
         'balance'       => (float) $r['balance'],
         'is_inside'     => (bool)  $r['is_inside'],
+        'photo_url'     => !empty($r['photo_path']) ? url('/' . $r['photo_path']) : '',
     ];
 }
 

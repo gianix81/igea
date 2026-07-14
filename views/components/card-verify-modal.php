@@ -145,6 +145,9 @@ var CardVerify = (function () {
   function getInitials(name) {
     return name.trim().split(/\s+/).map(function(w){ return w[0] || ''; }).join('').toUpperCase().slice(0,2);
   }
+  function titleCase(name) {
+    return (name || '').toLowerCase().replace(/(^|[\s'’-])([\p{L}])/gu, function(_, sep, ch){ return sep + ch.toUpperCase(); });
+  }
 
   function show(data, onConfirm, onCancel) {
     _onConfirm = onConfirm || null;
@@ -161,7 +164,7 @@ var CardVerify = (function () {
       initialsEl.textContent = getInitials(data.customer_name || '');
     }
 
-    nameEl.textContent = data.customer_name || '';
+    nameEl.textContent = titleCase(data.customer_name || '');
     metaEl.textContent = [data.card_type, data.phone].filter(Boolean).join(' · ');
     codeEl.textContent = data.card_code || '';
 

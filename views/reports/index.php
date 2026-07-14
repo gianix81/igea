@@ -1,9 +1,23 @@
 <?php
-$deptLabel = ['bar'=>'Bar','ristorante'=>'Ristorante','reception'=>'Reception','cassa'=>'Cassa','extra'=>'Extra'];
-$deptColor = ['bar'=>'#17b3c4','ristorante'=>'#e8a020','reception'=>'#0b5e74','cassa'=>'#2f9e72','extra'=>'#7a6bb0'];
+$deptLabel = ['bar'=>'Bar','ristorante'=>'Ristorante','reception'=>'Reception','cassa'=>'Cassa','extra'=>'Extra','piscina'=>'Piscina'];
+$deptColor = ['bar'=>'#17b3c4','ristorante'=>'#e8a020','reception'=>'#0b5e74','cassa'=>'#2f9e72','extra'=>'#7a6bb0','piscina'=>'#0d9488'];
 $pmLabel   = ['contanti'=>'Contanti','carta'=>'Carta/POS','bonifico'=>'Bonifico','altro'=>'Altro'];
+$deptFilterLabel = ['bar'=>'Bar','ristorante'=>'Ristorante','piscina'=>'Piscina'];
 
+// Totale di quanto mostrato nel grafico "Incassi per reparto" (già filtrato per reparto se attivo)
 $totalCharges = array_sum(array_column($deptCharges, 'total'));
+// "Consumazioni" (bar+ristorante) resta un dato a sé, indipendente dal filtro reparto:
+// esclude sempre piscina/cassa/reception/extra, per non confondersi con l'incasso ingressi.
+$consDeptCharges = array_filter($deptCharges, fn($r) => in_array($r['department'], ['bar', 'ristorante'], true));
+$consumptionsTotal = array_sum(array_column($consDeptCharges, 'total'));
+if ($deptFilter === 'bar' || $deptFilter === 'ristorante') {
+    $consumptionsLabel = $deptFilterLabel[$deptFilter];
+} else {
+    $consumptionsLabel = 'Bar + Ristorante';
+}
+$showPoolTiles = ($deptFilter === '' || $deptFilter === 'piscina');
+$showConsumptionsTile = ($deptFilter !== 'piscina');
+$showDeptDoughnut = ($deptFilter === '');
 $avgEntry     = $entriesKpi['cnt'] > 0 ? $paymentsTotal / $entriesKpi['cnt'] : 0;
 
 $trendLabels   = json_encode(array_column($trendData, 'label'));
@@ -146,8 +160,9 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
 
 <div class="rp-page">
 
-  <!-- ── Period selector ── -->
+  <!-- ── Period + reparto selector ── -->
   <form method="get" action="<?= url('/reports') ?>" id="rpForm">
+    <input type="hidden" id="rpDept" name="dept" value="<?= e($deptFilter) ?>">
     <div class="rp-period">
       <span class="rp-period-label">Periodo</span>
       <div class="rp-quick">
@@ -174,6 +189,14 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
         <input type="date" class="rp-date-input" id="rpTo"   name="to"   value="<?= e($toDate) ?>">
         <button type="submit" class="rp-go-btn">Aggiorna</button>
       </div>
+      <span class="rp-sep">|</span>
+      <span class="rp-period-label">Reparto</span>
+      <div class="rp-quick">
+        <button type="button" class="rp-q-btn <?= $deptFilter===''?'active':'' ?>" onclick="setDept('')">Tutti</button>
+        <?php foreach ($deptFilterLabel as $dv => $dLbl): ?>
+        <button type="button" class="rp-q-btn <?= $deptFilter===$dv?'active':'' ?>" onclick="setDept('<?= $dv ?>')"><?= e($dLbl) ?></button>
+        <?php endforeach; ?>
+      </div>
       <span class="rp-period-info">
         <strong><?= $diffDays ?></strong> <?= $diffDays===1?'giorno':'giorni' ?> analizzati
       </span>
@@ -182,6 +205,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
 
   <!-- ── KPI tiles ── -->
   <div class="rp-kpi-grid">
+    <?php if ($showPoolTiles): ?>
     <div class="rp-kpi">
       <span class="rp-kpi-label">Ingressi</span>
       <span class="rp-kpi-value accent"><?= number_format((int)$entriesKpi['cnt']) ?></span>
@@ -192,21 +216,26 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
       <span class="rp-kpi-value">€&thinsp;<?= number_format((float)$entriesKpi['fee'],2,',','.') ?></span>
       <span class="rp-kpi-sub">Totale periodo</span>
     </div>
+    <?php endif; ?>
+    <?php if ($showConsumptionsTile): ?>
     <div class="rp-kpi">
       <span class="rp-kpi-label">Consumazioni</span>
-      <span class="rp-kpi-value">€&thinsp;<?= number_format($totalCharges,2,',','.') ?></span>
-      <span class="rp-kpi-sub">Bar + Ristorante</span>
+      <span class="rp-kpi-value">€&thinsp;<?= number_format($consumptionsTotal,2,',','.') ?></span>
+      <span class="rp-kpi-sub"><?= e($consumptionsLabel) ?></span>
     </div>
+    <?php endif; ?>
     <div class="rp-kpi">
       <span class="rp-kpi-label">Incassato</span>
       <span class="rp-kpi-value good">€&thinsp;<?= number_format($paymentsTotal,2,',','.') ?></span>
       <span class="rp-kpi-sub">Pagamenti registrati</span>
     </div>
+    <?php if ($showPoolTiles): ?>
     <div class="rp-kpi">
       <span class="rp-kpi-label">Media / ingresso</span>
       <span class="rp-kpi-value">€&thinsp;<?= number_format($avgEntry,2,',','.') ?></span>
       <span class="rp-kpi-sub">Incasso medio</span>
     </div>
+    <?php endif; ?>
     <div class="rp-kpi">
       <span class="rp-kpi-label">Saldi aperti</span>
       <span class="rp-kpi-value warn">€&thinsp;<?= number_format($cardBalance,2,',','.') ?></span>
@@ -246,6 +275,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
     <div class="rp-col-r">
 
       <!-- Incassi per reparto -->
+      <?php if ($showDeptDoughnut): ?>
       <div class="rp-box">
         <div class="rp-box-hd">Incassi per reparto</div>
         <?php if (empty($deptCharges)): ?>
@@ -274,6 +304,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
           </div>
         <?php endif; ?>
       </div>
+      <?php endif; ?>
 
       <!-- Metodi di pagamento -->
       <div class="rp-box">
@@ -301,6 +332,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
       </div>
 
       <!-- Dettaglio ingressi per giorno -->
+      <?php if ($showPoolTiles): ?>
       <div class="rp-box grow">
         <div class="rp-box-hd">Ingressi giorno per giorno</div>
         <?php if (empty($entryDetail)): ?>
@@ -339,6 +371,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
           </div>
         <?php endif; ?>
       </div>
+      <?php endif; ?>
 
     </div><!-- /rp-col-r -->
   </div><!-- /rp-body -->
@@ -421,6 +454,11 @@ if (prodEl) {
 function setRange(from, to) {
   document.getElementById('rpFrom').value = from;
   document.getElementById('rpTo').value   = to;
+  document.getElementById('rpForm').submit();
+}
+
+function setDept(dept) {
+  document.getElementById('rpDept').value = dept;
   document.getElementById('rpForm').submit();
 }
 </script>

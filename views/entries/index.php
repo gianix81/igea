@@ -49,6 +49,14 @@
 .en-multiselect option { padding: 5px 8px; border-radius: 6px; }
 .en-multiselect option:checked { background: var(--accent); color: var(--accent-ink); }
 
+.en-child-rate-btn {
+  width: 100%; padding: 7px 10px; border-radius: 8px;
+  border: 1.5px dashed var(--border); background: transparent;
+  color: var(--muted); font-size: 11.5px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: border-color .15s, color .15s;
+}
+.en-child-rate-btn:hover { border-color: var(--accent); color: var(--accent); }
+
 /* Submit */
 .en-submit {
   width: 100%; padding: 13px; border-radius: 11px; border: none;
@@ -197,9 +205,17 @@
         </div>
         <div>
           <label class="en-form-label">Tariffa €</label>
-          <input class="en-input" name="entry_fee" type="number" step="0.01" min="0" value="0">
+          <input class="en-input" name="entry_fee" id="en_entry_fee" type="number" step="0.01" min="0" value="0">
         </div>
       </div>
+
+      <?php if ($childEntryRate !== null): ?>
+      <div class="en-form-group" style="margin-top:-4px">
+        <button type="button" class="en-child-rate-btn" onclick="document.getElementById('en_entry_fee').value = '<?= e((string)$childEntryRate) ?>'">
+          👶 Ridotto bimbi (≤5 anni) — € <?= e((string)$childEntryRate) ?>
+        </button>
+      </div>
+      <?php endif; ?>
 
       <div class="en-row-2" style="margin-bottom:10px">
         <div>

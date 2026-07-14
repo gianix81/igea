@@ -68,7 +68,13 @@ function require_login(): void
 function require_role(array|string $roles): void
 {
     require_login();
-    if (!has_role($roles) && !has_role('admin')) {
+    $roles = (array) $roles;
+    // Il "gestore" ha accesso operativo pieno come l'admin, tranne dove una sezione è
+    // riservata esclusivamente all'amministratore (richiesta solo ['admin']: utenti,
+    // eliminazioni permanenti di clienti o posti).
+    $adminOnly = ($roles === ['admin']);
+    $allowed   = has_role($roles) || has_role('admin') || (!$adminOnly && has_role('gestore'));
+    if (!$allowed) {
         http_response_code(403);
         include __DIR__ . '/../../views/errors/403.php';
         exit;

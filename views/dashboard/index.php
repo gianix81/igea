@@ -290,8 +290,8 @@ body.db-active main.app {
         <?php if (empty($latest)): ?>
           <div class="db-feed-empty">Nessun movimento registrato oggi</div>
         <?php else:
-          $dc = ['bar'=>'#17b3c4','ristorante'=>'#e8a020','cassa'=>'#2f9e72','reception'=>'#0b5e74','extra'=>'#7a6bb0'];
-          $dl = ['bar'=>'Bar','ristorante'=>'Risto','cassa'=>'Cassa','reception'=>'Recep.','extra'=>'Extra'];
+          $dc = ['bar'=>'#17b3c4','ristorante'=>'#e8a020','cassa'=>'#2f9e72','reception'=>'#0b5e74','extra'=>'#7a6bb0','piscina'=>'#0d9488'];
+          $dl = ['bar'=>'Bar','ristorante'=>'Risto','cassa'=>'Cassa','reception'=>'Recep.','extra'=>'Extra','piscina'=>'Piscina'];
           foreach ($latest as $m):
             $dept      = $m['department'] ?? 'extra';
             $isPay     = in_array($m['movement_type'], ['payment','refund'], true);

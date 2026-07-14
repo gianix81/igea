@@ -28,6 +28,7 @@ $deptLabel = [
     'reception'  => 'Reception',
     'cassa'      => 'Cassa',
     'extra'      => 'Extra',
+    'piscina'    => 'Piscina',
 ];
 
 // Avatar color from name
@@ -289,6 +290,49 @@ function cu_initials(string $first, string $last): string {
 .cu-card-actions .btn { font-size:12px; font-weight:700; }
 
 /* Movements inline */
+/* Nucleo familiare */
+.cu-family-panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 18px; margin-bottom: 16px;
+}
+.cu-family-title { font-family:'Poppins',sans-serif; font-size: 14px; font-weight: 800; color: var(--text); }
+.cu-family-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; margin-bottom: 12px; }
+.cu-family-empty { font-size: 12.5px; color: var(--muted-2); padding: 6px 0 12px; }
+.cu-family-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.cu-family-member {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface-2);
+}
+.cu-family-avatar {
+  width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: var(--muted);
+}
+.cu-family-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.cu-family-info { flex: 1; min-width: 0; }
+.cu-family-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.cu-family-phone { font-size: 11px; color: var(--muted-2); }
+.cu-family-remove {
+  border: none; background: transparent; color: var(--muted-2);
+  font-size: 13px; cursor: pointer; padding: 4px 7px; border-radius: 6px;
+  transition: background .12s, color .12s;
+}
+.cu-family-remove:hover { background: color-mix(in srgb, var(--bad) 12%, transparent); color: var(--bad); }
+.cu-family-dd {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.16);
+  max-height: 220px; overflow-y: auto;
+}
+.cu-family-opt { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
+.cu-family-opt:last-child { border-bottom: none; }
+.cu-family-opt:hover { background: var(--surface-2); }
+.cu-family-opt-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.cu-family-opt-meta { font-size: 10.5px; color: var(--muted-2); white-space: nowrap; }
+.cu-family-dd-empty { padding: 12px; text-align: center; font-size: 12px; color: var(--muted-2); }
+
 .cu-movements { margin-top:16px; }
 .cu-mov-table { width:100%; border-collapse:collapse; font-size:13px; }
 .cu-mov-table thead th {
@@ -729,6 +773,45 @@ function cu_initials(string $first, string $last): string {
   </div>
   <?php endif; ?>
 
+  <!-- Nucleo familiare (quando una card è selezionata) -->
+  <?php if (isset($selectedCard)): ?>
+  <div class="cu-family-panel">
+    <div class="cu-family-title">👪 Nucleo familiare — <?= e($selectedCard['card_code']) ?></div>
+    <div class="cu-family-sub">Chi condivide questa card: saldo e movimenti restano unici, legati alla card.</div>
+
+    <div class="cu-family-list" id="cuFamilyList">
+      <?php if (empty($familyMembers)): ?>
+        <div class="cu-family-empty">Nessun familiare aggiunto. Oggi la card è intestata solo a <?= e($fullName) ?>.</div>
+      <?php else: foreach ($familyMembers as $m): ?>
+        <div class="cu-family-member" data-customer-id="<?= (int)$m['id'] ?>">
+          <div class="cu-family-avatar">
+            <?php if (!empty($m['photo_path'])): ?>
+              <img src="<?= url('/' . e($m['photo_path'])) ?>" alt="">
+            <?php else: ?>
+              <?= e(cu_initials($m['first_name'], $m['last_name'])) ?>
+            <?php endif; ?>
+          </div>
+          <div class="cu-family-info">
+            <div class="cu-family-name"><?= e($m['first_name'] . ' ' . $m['last_name']) ?></div>
+            <?php if ($m['phone']): ?><div class="cu-family-phone"><?= e($m['phone']) ?></div><?php endif; ?>
+          </div>
+          <button type="button" class="cu-family-remove"
+                  onclick="removeFamilyMember(<?= (int)$m['id'] ?>, <?= json_encode($m['first_name'] . ' ' . $m['last_name'], JSON_THROW_ON_ERROR) ?>)"
+                  title="Rimuovi dal nucleo">✕</button>
+        </div>
+      <?php endforeach; endif; ?>
+    </div>
+
+    <div class="cu-family-add">
+      <div class="position-relative">
+        <input type="text" class="form-control form-control-sm" id="cuFamilySearch"
+               placeholder="Cerca cliente da aggiungere al nucleo…" autocomplete="off">
+        <div class="cu-family-dd" id="cuFamilyDd" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
+
   <!-- Movements inline (when card selected) -->
   <?php if (isset($selectedCard) && !empty($movements)): ?>
   <div class="cu-movements">
@@ -1124,6 +1207,12 @@ const UPD_CUSTOMER_URL  = '<?= url('/api/customers/update.php') ?>';
 const DEL_CUSTOMER_URL  = '<?= url('/api/customers/delete.php') ?>';
 const UPD_CARD_URL      = '<?= url('/api/customers/update-card.php') ?>';
 const DEL_MOVEMENT_URL  = '<?= url('/api/scheda/storna-consumazione.php') ?>';
+const FAMILY_SEARCH_URL = '<?= url('/api/customers/search') ?>';
+const FAMILY_ADD_URL    = '<?= url('/api/customers/add-family-member.php') ?>';
+const FAMILY_REMOVE_URL = '<?= url('/api/customers/remove-family-member.php') ?>';
+const FAMILY_CARD_ID    = <?= isset($selectedCard) ? (int)$selectedCard['id'] : 'null' ?>;
+const FAMILY_HOLDER_ID  = <?= (int)$customer['id'] ?>;
+const FAMILY_EXISTING_IDS = <?= json_encode(array_map(fn($m) => (int)$m['id'], $familyMembers ?? []), JSON_THROW_ON_ERROR) ?>;
 const CUSTOMER_ID       = <?= isset($customer) ? (int)$customer['id'] : 'null' ?>;
 var _ecCameraStream     = null;
 
@@ -1160,6 +1249,83 @@ function fallbackCopy(text) {
   document.body.appendChild(ta); ta.select();
   try { document.execCommand('copy'); } catch (e) {}
   document.body.removeChild(ta);
+}
+
+/* ── Nucleo familiare ────────────────────────────────────── */
+(function () {
+  var searchEl = document.getElementById('cuFamilySearch');
+  if (!searchEl) return;
+  var ddEl = document.getElementById('cuFamilyDd');
+  var _timer, _lastQ = null;
+
+  function doSearch(q) {
+    if (q === _lastQ || q.length < 2) return;
+    _lastQ = q;
+    fetch(FAMILY_SEARCH_URL + '?q=' + encodeURIComponent(q))
+      .then(function (r) { return r.json(); })
+      .then(function (d) { renderResults(d.results || []); });
+  }
+
+  function renderResults(results) {
+    var excluded = [FAMILY_HOLDER_ID].concat(FAMILY_EXISTING_IDS);
+    results = results.filter(function (r) { return excluded.indexOf(r.customer_id) === -1; });
+    ddEl.style.display = '';
+    if (!results.length) {
+      ddEl.innerHTML = '<div class="cu-family-dd-empty">Nessun cliente trovato</div>';
+      return;
+    }
+    ddEl.innerHTML = results.map(function (r) {
+      return '<div class="cu-family-opt" data-id="' + r.customer_id + '" data-name="' + r.customer_name.replace(/"/g, '&quot;') + '">'
+        + '<span class="cu-family-opt-name">' + r.customer_name + '</span>'
+        + '<span class="cu-family-opt-meta">' + (r.phone || '') + '</span>'
+        + '</div>';
+    }).join('');
+    ddEl.querySelectorAll('.cu-family-opt').forEach(function (opt) {
+      opt.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        addFamilyMember(parseInt(opt.getAttribute('data-id'), 10), opt.getAttribute('data-name'));
+      });
+    });
+  }
+
+  searchEl.addEventListener('input', function () {
+    clearTimeout(_timer);
+    var q = searchEl.value.trim();
+    if (!q) { ddEl.style.display = 'none'; return; }
+    _timer = setTimeout(function () { doSearch(q); }, 200);
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.cu-family-add')) ddEl.style.display = 'none';
+  });
+}());
+
+function addFamilyMember(customerId, name) {
+  fetch(FAMILY_ADD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ card_id: FAMILY_CARD_ID, customer_id: customerId, _csrf: CSRF }).toString()
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    if (d.success) { toast('✓ ' + name + ' aggiunto al nucleo'); setTimeout(function () { location.reload(); }, 500); }
+    else { toast(d.error || 'Errore', true); }
+  })
+  .catch(function () { toast('Errore di rete', true); });
+}
+
+function removeFamilyMember(customerId, name) {
+  if (!confirm('Rimuovere ' + name + ' dal nucleo di questa card?')) return;
+  fetch(FAMILY_REMOVE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ card_id: FAMILY_CARD_ID, customer_id: customerId, _csrf: CSRF }).toString()
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    if (d.success) { toast('✓ ' + name + ' rimosso dal nucleo'); setTimeout(function () { location.reload(); }, 400); }
+    else { toast(d.error || 'Errore', true); }
+  })
+  .catch(function () { toast('Errore di rete', true); });
 }
 
 /* Delete (storno) a movement */

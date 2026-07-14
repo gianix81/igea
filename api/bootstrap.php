@@ -5,6 +5,7 @@ require __DIR__ . '/../app/Services/BalanceService.php';
 require __DIR__ . '/../app/Services/CardService.php';
 require __DIR__ . '/../app/Services/EntryService.php';
 require __DIR__ . '/../app/Services/PaymentService.php';
+require __DIR__ . '/../app/Services/PriceListService.php';
 
 $app = require __DIR__ . '/../config/app.php';
 date_default_timezone_set($app['timezone']);

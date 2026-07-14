@@ -64,10 +64,12 @@ try {
     ")->execute([$code, $customerId, $date, $timeSlot, $people, $status, $total, $notes, current_user()['id']]);
     $reservationId = (int) $pdo->lastInsertId();
 
+    $priceSvc = new PriceListService();
     $insRp = $pdo->prepare("INSERT INTO reservation_places (reservation_id, place_id, price, status) VALUES (?, ?, ?, 'prenotato')");
     $updPl = $pdo->prepare("UPDATE pool_places SET status = 'prenotato' WHERE id = ? AND status = 'disponibile'");
     foreach ($places as $pl) {
-        $insRp->execute([$reservationId, (int)$pl['id'], (float)$pl['base_price']]);
+        $price = $priceSvc->seatPrice($pl['type'], $date) ?? (float) $pl['base_price'];
+        $insRp->execute([$reservationId, (int)$pl['id'], $price]);
         $updPl->execute([(int)$pl['id']]);
     }
 

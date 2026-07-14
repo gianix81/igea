@@ -5,6 +5,7 @@ require __DIR__ . '/../app/Services/BalanceService.php';
 require __DIR__ . '/../app/Services/CardService.php';
 require __DIR__ . '/../app/Services/EntryService.php';
 require __DIR__ . '/../app/Services/PaymentService.php';
+require __DIR__ . '/../app/Services/PriceListService.php';
 
 $app = require __DIR__ . '/../config/app.php';
 date_default_timezone_set($app['timezone']);
@@ -21,6 +22,12 @@ $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
 $base = dirname($_SERVER['SCRIPT_NAME']);
 if ($base !== '/' && str_starts_with($path, $base)) {
     $path = substr($path, strlen($base)) ?: '/';
+}
+
+function render_public(string $view, array $data = []): void
+{
+    extract($data, EXTR_SKIP);
+    include __DIR__ . '/../views/' . $view . '.php';
 }
 
 function render(string $view, array $data = []): void
@@ -55,6 +62,91 @@ try {
     if ($path === '/logout') {
         session_destroy();
         redirect('/login');
+    }
+
+    // ── Prenotazione pubblica (ospite non registrato, rif. 17) ──────────────
+    // Unica rotta accessibile senza login: nessun dato di altri clienti è mai esposto qui.
+    if ($path === '/prenota') {
+        $pdo     = db();
+        $errors  = [];
+        $success = false;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Honeypot: campo invisibile all'utente reale, se compilato è un bot.
+            $honeypot = trim((string) request_input('website', ''));
+
+            $firstName = trim((string) request_input('first_name', ''));
+            $lastName  = trim((string) request_input('last_name', ''));
+            $phone     = trim((string) request_input('phone', ''));
+            $email     = trim((string) request_input('email', ''));
+            $date      = trim((string) request_input('usage_date', ''));
+            $timeSlot  = (string) request_input('time_slot', 'intera giornata');
+            $people    = max(1, min(20, (int) request_input('people_count', 1)));
+            $notes     = trim((string) request_input('notes', ''));
+            $consent   = (bool) request_input('privacy_consent', false);
+
+            if (!in_array($timeSlot, ['intera giornata', 'pomeriggio'], true)) {
+                $timeSlot = 'intera giornata';
+            }
+
+            if ($honeypot === '') {
+                if ($firstName === '' || $lastName === '') $errors[] = 'Nome e cognome sono obbligatori.';
+                if ($phone === '') $errors[] = 'Il telefono è obbligatorio: ci serve per confermarti la prenotazione.';
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || $date < date('Y-m-d')) {
+                    $errors[] = 'Seleziona una data valida, non nel passato.';
+                } elseif (strtotime($date) > strtotime('+90 days')) {
+                    $errors[] = 'Per date oltre i 3 mesi contattaci direttamente.';
+                }
+                if (!$consent) $errors[] = 'È necessario accettare il trattamento dei dati per inviare la richiesta.';
+
+                // Freno anti-spam: stessa sessione o stesso telefono non possono reinviare a raffica.
+                if (empty($errors)) {
+                    $lastSubmit = (int) ($_SESSION['prenota_last_submit'] ?? 0);
+                    if (time() - $lastSubmit < 60) {
+                        $errors[] = 'Attendi un momento prima di inviare un\'altra richiesta.';
+                    }
+                }
+                if (empty($errors) && $phone !== '') {
+                    $chk = $pdo->prepare("SELECT COUNT(*) FROM reservations r JOIN customers c ON c.id = r.customer_id WHERE c.phone = ? AND r.created_at > (NOW() - INTERVAL 5 MINUTE)");
+                    $chk->execute([$phone]);
+                    if ((int) $chk->fetchColumn() > 0) {
+                        $errors[] = 'Hai già inviato una richiesta di recente: ti contatteremo a breve.';
+                    }
+                }
+
+                if (empty($errors)) {
+                    $pdo->beginTransaction();
+                    try {
+                        $custStmt = $pdo->prepare("SELECT id FROM customers WHERE phone = ? AND status = 'attivo' LIMIT 1");
+                        $custStmt->execute([$phone]);
+                        $custId = (int) $custStmt->fetchColumn();
+                        if (!$custId) {
+                            $pdo->prepare("INSERT INTO customers (first_name, last_name, phone, email, status, privacy_consent, notes) VALUES (?, ?, ?, ?, 'attivo', 1, 'Creato da richiesta pubblica di prenotazione (/prenota)')")
+                                ->execute([$firstName, $lastName, $phone, $email ?: null]);
+                            $custId = (int) $pdo->lastInsertId();
+                        }
+                        $code = 'PRE' . date('YmdHis') . random_int(10, 99);
+                        $fullNotes = trim('Richiesta inviata online da ' . $firstName . ' ' . $lastName . '.' . ($notes !== '' ? ' Note cliente: ' . $notes : ''));
+                        $pdo->prepare("INSERT INTO reservations (reservation_code, customer_id, reservation_date, usage_date, time_slot, people_count, status, total_amount, notes) VALUES (?, ?, CURDATE(), ?, ?, ?, 'in attesa', 0, ?)")
+                            ->execute([$code, $custId, $date, $timeSlot, $people, $fullNotes]);
+                        $resId = (int) $pdo->lastInsertId();
+                        audit_log('public_booking_request', 'reservation', $resId, ['phone' => $phone, 'date' => $date, 'people' => $people]);
+                        $pdo->commit();
+                        $_SESSION['prenota_last_submit'] = time();
+                        $success = true;
+                    } catch (Throwable $e) {
+                        $pdo->rollBack();
+                        $errors[] = 'Errore imprevisto. Riprova o contattaci telefonicamente.';
+                    }
+                }
+            } else {
+                // Honeypot compilato: probabile bot. Nessuna scrittura, ma mostriamo successo.
+                $success = true;
+            }
+        }
+
+        render_public('public/prenota', compact('errors', 'success'));
+        exit;
     }
 
     require_login();
@@ -106,6 +198,7 @@ try {
             $cards = $stmt->fetchAll();
             $selectedCard = null;
             $movements = [];
+            $familyMembers = [];
             $cardId = (int) request_input('card', 0);
             if ($cardId > 0) {
                 foreach ($cards as $c) {
@@ -113,9 +206,10 @@ try {
                 }
                 if ($selectedCard) {
                     $movements = (new BalanceService())->movements($cardId);
+                    $familyMembers = (new CardService())->members($cardId);
                 }
             }
-            render('customers/index', compact('customer', 'cards', 'selectedCard', 'movements'));
+            render('customers/index', compact('customer', 'cards', 'selectedCard', 'movements', 'familyMembers'));
             exit;
         }
         $sel  = "SELECT cu.*, COALESCE(SUM(c.current_balance),0) AS total_balance, COUNT(DISTINCT c.id) AS active_cards FROM customers cu LEFT JOIN cards c ON c.customer_id = cu.id AND c.status = 'attiva'";
@@ -167,7 +261,7 @@ try {
 
                 $entryFee = (float) request_input('entry_fee', 0);
                 if ($entryFee > 0) {
-                    $pdo->prepare("INSERT INTO card_movements (card_id, customer_id, entry_id, movement_type, department, description, quantity, unit_price, total_amount, status, operator_id) VALUES (?, ?, ?, 'charge', 'reception', 'Ingresso piscina', 1, ?, ?, 'open', ?)")->execute([(int) $card['id'], (int) $card['customer_id'], $entryId, $entryFee, $entryFee, current_user()['id']]);
+                    $pdo->prepare("INSERT INTO card_movements (card_id, customer_id, entry_id, movement_type, department, description, quantity, unit_price, total_amount, status, operator_id) VALUES (?, ?, ?, 'charge', 'piscina', 'Ingresso piscina', 1, ?, ?, 'open', ?)")->execute([(int) $card['id'], (int) $card['customer_id'], $entryId, $entryFee, $entryFee, current_user()['id']]);
                 }
                 $paid = (float) request_input('paid_amount', 0);
                 if ($paid > 0) {
@@ -198,7 +292,8 @@ try {
         $flash   = !empty($_GET['message']) ? $_GET['message'] : null;
         $places  = db()->query("SELECT p.*, a.name area_name FROM pool_places p JOIN pool_areas a ON a.id = p.area_id WHERE p.status = 'disponibile' ORDER BY a.name, p.code")->fetchAll();
         $entries = db()->query("SELECT e.*, c.card_code, CONCAT(cu.first_name, ' ', cu.last_name) customer_name FROM entries e JOIN cards c ON c.id = e.card_id JOIN customers cu ON cu.id = e.customer_id WHERE e.entry_date = CURDATE() ORDER BY e.created_at DESC")->fetchAll();
-        render('entries/index', compact('places', 'entries', 'error', 'flash'));
+        $childEntryRate = (new PriceListService())->childEntryRate();
+        render('entries/index', compact('places', 'entries', 'error', 'flash', 'childEntryRate'));
         exit;
     }
 
@@ -257,8 +352,12 @@ try {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $card = (new CardService())->findByCode((string) request_input('card_code'));
             if (!$card) throw new RuntimeException('Card non trovata.');
-            (new PaymentService())->pay((int) $card['id'], (float) request_input('amount'), (string) request_input('payment_method'), (string) request_input('reason', 'saldo finale'), current_user()['id'], request_input('notes'));
-            redirect('/cashdesk?code=' . urlencode($card['card_code']) . '&message=' . urlencode('Pagamento registrato.'));
+            $confirmed = (string) request_input('outcome', 'ok') !== 'non_ok';
+            (new PaymentService())->pay((int) $card['id'], (float) request_input('amount'), (string) request_input('payment_method'), (string) request_input('reason', 'saldo finale'), current_user()['id'], request_input('notes'), $confirmed);
+            $message = $confirmed
+                ? 'Pagamento registrato.'
+                : 'Tentativo registrato come non riuscito: saldo e movimenti non modificati.';
+            redirect('/cashdesk?code=' . urlencode($card['card_code']) . '&message=' . urlencode($message));
         }
         $pdo  = db();
         $code  = trim((string) request_input('code', ''));
@@ -438,7 +537,8 @@ try {
         $reservations = $rStmt->fetchAll();
         $prevDate = date('Y-m-d', strtotime($date . ' -1 day'));
         $nextDate = date('Y-m-d', strtotime($date . ' +1 day'));
-        render('places/index', compact('places', 'areas', 'date', 'prevDate', 'nextDate', 'customers', 'reservations', 'poolAreas'));
+        $seatRates = (new PriceListService())->all();
+        render('places/index', compact('places', 'areas', 'date', 'prevDate', 'nextDate', 'customers', 'reservations', 'poolAreas', 'seatRates'));
         exit;
     }
 
@@ -452,6 +552,20 @@ try {
         $categories = $pdo->query("SELECT * FROM product_categories ORDER BY department, name")->fetchAll();
         $products   = $pdo->query("SELECT p.*, pc.name category_name, pc.department FROM products p JOIN product_categories pc ON pc.id = p.category_id ORDER BY pc.department, pc.name, p.name")->fetchAll();
         render('products/index', compact('categories', 'products'));
+        exit;
+    }
+
+    if ($path === '/tariffe') {
+        require_role(['admin', 'reception']);
+        $rates = (new PriceListService())->all();
+        render('tariffe/index', compact('rates'));
+        exit;
+    }
+
+    if ($path === '/utenti') {
+        require_role(['admin']);
+        $roleUsers = db()->query("SELECT id, name, email, role, active, created_at FROM users ORDER BY FIELD(role,'admin','gestore','reception','bar','ristorazione','cassa'), name")->fetchAll();
+        render('utenti/index', compact('roleUsers'));
         exit;
     }
 
@@ -470,18 +584,23 @@ try {
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fromDate)) $fromDate = date('Y-m-d');
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $toDate))   $toDate   = date('Y-m-d');
         if ($toDate < $fromDate) $toDate = $fromDate;
+        $deptFilter = (string) request_input('dept', '');
+        if (!in_array($deptFilter, ['bar', 'ristorante', 'piscina'], true)) $deptFilter = '';
+        $deptSql    = $deptFilter !== '' ? " AND department = ?" : "";
+        $deptSqlM   = $deptFilter !== '' ? " AND m.department = ?" : ""; // query con join su product_categories (anch'essa con colonna department)
+        $deptParams = $deptFilter !== '' ? [$deptFilter] : [];
         $s = $pdo->prepare("SELECT COUNT(*) cnt, COALESCE(SUM(entry_fee),0) fee, COALESCE(SUM(people_count),0) people FROM entries WHERE entry_date BETWEEN ? AND ?");
         $s->execute([$fromDate, $toDate]); $entriesKpi = $s->fetch();
         $s = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM payments WHERE DATE(created_at) BETWEEN ? AND ?");
         $s->execute([$fromDate, $toDate]); $paymentsTotal = (float) $s->fetchColumn();
         $cardBalance = (float) $pdo->query("SELECT COALESCE(SUM(current_balance),0) FROM cards WHERE current_balance > 0")->fetchColumn();
         $cardsOpen   = (int)   $pdo->query("SELECT COUNT(*) FROM cards WHERE current_balance > 0")->fetchColumn();
-        $s = $pdo->prepare("SELECT department, COUNT(*) cnt, COALESCE(SUM(total_amount),0) total FROM card_movements WHERE movement_type='charge' AND status<>'cancelled' AND DATE(created_at) BETWEEN ? AND ? GROUP BY department ORDER BY total DESC");
-        $s->execute([$fromDate, $toDate]); $deptCharges = $s->fetchAll();
+        $s = $pdo->prepare("SELECT department, COUNT(*) cnt, COALESCE(SUM(total_amount),0) total FROM card_movements WHERE movement_type='charge' AND status<>'cancelled' AND DATE(created_at) BETWEEN ? AND ?$deptSql GROUP BY department ORDER BY total DESC");
+        $s->execute([...[$fromDate, $toDate], ...$deptParams]); $deptCharges = $s->fetchAll();
         $s = $pdo->prepare("SELECT payment_method, COUNT(*) cnt, COALESCE(SUM(amount),0) total FROM payments WHERE DATE(created_at) BETWEEN ? AND ? GROUP BY payment_method ORDER BY total DESC");
         $s->execute([$fromDate, $toDate]); $paymentMethods = $s->fetchAll();
-        $s = $pdo->prepare("SELECT p.name prod_name, pc.name cat_name, pc.department, COUNT(*) orders_cnt, COALESCE(SUM(m.quantity),0) qty_total, COALESCE(SUM(m.total_amount),0) revenue FROM card_movements m JOIN products p ON p.id=m.product_id JOIN product_categories pc ON pc.id=p.category_id WHERE m.movement_type='charge' AND m.status<>'cancelled' AND DATE(m.created_at) BETWEEN ? AND ? GROUP BY m.product_id, p.name, pc.name, pc.department ORDER BY revenue DESC LIMIT 15");
-        $s->execute([$fromDate, $toDate]); $topProducts = $s->fetchAll();
+        $s = $pdo->prepare("SELECT p.name prod_name, pc.name cat_name, pc.department, COUNT(*) orders_cnt, COALESCE(SUM(m.quantity),0) qty_total, COALESCE(SUM(m.total_amount),0) revenue FROM card_movements m JOIN products p ON p.id=m.product_id JOIN product_categories pc ON pc.id=p.category_id WHERE m.movement_type='charge' AND m.status<>'cancelled' AND DATE(m.created_at) BETWEEN ? AND ?$deptSqlM GROUP BY m.product_id, p.name, pc.name, pc.department ORDER BY revenue DESC LIMIT 15");
+        $s->execute([...[$fromDate, $toDate], ...$deptParams]); $topProducts = $s->fetchAll();
         $diffDays = max(1, (int) round((strtotime($toDate) - strtotime($fromDate)) / 86400) + 1);
         $trendData = [];
         if ($diffDays <= 93) {
@@ -489,14 +608,14 @@ try {
             $s->execute([$fromDate, $toDate]); $entryMap = array_column($s->fetchAll(PDO::FETCH_ASSOC), null, 'dk');
             $s = $pdo->prepare("SELECT DATE(created_at) dk, COALESCE(SUM(amount),0) paid FROM payments WHERE DATE(created_at) BETWEEN ? AND ? GROUP BY DATE(created_at)");
             $s->execute([$fromDate, $toDate]); $paidMap = array_column($s->fetchAll(PDO::FETCH_ASSOC), 'paid', 'dk');
-            $s = $pdo->prepare("SELECT DATE(created_at) dk, COALESCE(SUM(total_amount),0) charges FROM card_movements WHERE movement_type='charge' AND status<>'cancelled' AND DATE(created_at) BETWEEN ? AND ? GROUP BY DATE(created_at)");
-            $s->execute([$fromDate, $toDate]); $chargeMap = array_column($s->fetchAll(PDO::FETCH_ASSOC), 'charges', 'dk');
+            $s = $pdo->prepare("SELECT DATE(created_at) dk, COALESCE(SUM(total_amount),0) charges FROM card_movements WHERE movement_type='charge' AND status<>'cancelled' AND DATE(created_at) BETWEEN ? AND ?$deptSql GROUP BY DATE(created_at)");
+            $s->execute([...[$fromDate, $toDate], ...$deptParams]); $chargeMap = array_column($s->fetchAll(PDO::FETCH_ASSOC), 'charges', 'dk');
             $cur = strtotime($fromDate); $end = strtotime($toDate);
             while ($cur <= $end) { $dk = date('Y-m-d', $cur); $trendData[] = ['label' => date('d/m', $cur), 'entries' => (int) ($entryMap[$dk]['entries'] ?? 0), 'paid' => (float) ($paidMap[$dk] ?? 0), 'charges' => (float) ($chargeMap[$dk] ?? 0)]; $cur += 86400; }
         }
         $s = $pdo->prepare("SELECT e.entry_date, COUNT(*) cnt, COALESCE(SUM(e.entry_fee),0) fees, COALESCE(SUM(e.people_count),0) people FROM entries e WHERE e.entry_date BETWEEN ? AND ? GROUP BY e.entry_date ORDER BY e.entry_date DESC LIMIT 60");
         $s->execute([$fromDate, $toDate]); $entryDetail = $s->fetchAll();
-        render('reports/index', compact('fromDate', 'toDate', 'diffDays', 'entriesKpi', 'paymentsTotal', 'cardBalance', 'cardsOpen', 'deptCharges', 'paymentMethods', 'topProducts', 'trendData', 'entryDetail'));
+        render('reports/index', compact('fromDate', 'toDate', 'diffDays', 'deptFilter', 'entriesKpi', 'paymentsTotal', 'cardBalance', 'cardsOpen', 'deptCharges', 'paymentMethods', 'topProducts', 'trendData', 'entryDetail'));
         exit;
     }
 
@@ -505,8 +624,21 @@ try {
         require_role(['admin', 'reception', 'cassa']);
         $q   = trim((string) request_input('q', ''));
         $pdo = db();
-        $sel  = "SELECT cu.id AS customer_id, cu.first_name, cu.last_name, cu.phone, cu.photo_path, c.card_code, c.card_type, c.current_balance AS balance, c.is_inside";
-        $from = " FROM customers cu LEFT JOIN cards c ON c.customer_id = cu.id AND c.status = 'attiva' WHERE cu.status = 'attivo'";
+        // COALESCE: card propria se il cliente è intestatario, altrimenti la card del nucleo
+        // familiare a cui è stato aggiunto come membro (card_members).
+        $sel  = "SELECT cu.id AS customer_id, cu.first_name, cu.last_name, cu.phone, cu.photo_path,
+                    COALESCE(c.card_code, fc.card_code) card_code,
+                    COALESCE(c.card_type, fc.card_type) card_type,
+                    COALESCE(c.current_balance, fc.current_balance) balance,
+                    COALESCE(c.is_inside, fc.is_inside) is_inside";
+        $from = " FROM customers cu
+                  LEFT JOIN cards c  ON c.customer_id = cu.id AND c.status = 'attiva'
+                  LEFT JOIN cards fc ON fc.id = (
+                      SELECT cm.card_id FROM card_members cm JOIN cards c2 ON c2.id = cm.card_id
+                      WHERE cm.customer_id = cu.id AND c2.status = 'attiva'
+                      ORDER BY c2.created_at DESC LIMIT 1
+                  )
+                  WHERE cu.status = 'attivo'";
         if ($q === '') {
             $stmt = $pdo->prepare($sel . $from . " ORDER BY cu.last_name, cu.first_name LIMIT 60");
             $stmt->execute();

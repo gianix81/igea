@@ -50,11 +50,18 @@ if ($q === '') {
               OR cu.fiscal_code   LIKE ?
               OR CONCAT(cu.last_name, ' ', cu.first_name) LIKE ?
               OR CONCAT(cu.first_name, ' ', cu.last_name) LIKE ?
+              OR EXISTS (
+                  SELECT 1 FROM card_members cm JOIN customers mcu ON mcu.id = cm.customer_id
+                  WHERE cm.card_id = c.id
+                    AND (mcu.last_name LIKE ? OR mcu.first_name LIKE ?
+                         OR CONCAT(mcu.last_name, ' ', mcu.first_name) LIKE ?
+                         OR CONCAT(mcu.first_name, ' ', mcu.last_name) LIKE ?)
+              )
           )
         ORDER BY cu.last_name, cu.first_name
         LIMIT 40
     ");
-    $stmt->execute([$like, $like, $like, $like, $like, $like, $like]);
+    $stmt->execute([$like, $like, $like, $like, $like, $like, $like, $like, $like, $like, $like]);
 }
 
 $rows    = $stmt->fetchAll();

@@ -6,6 +6,19 @@ foreach ($places as $p) {
     $byCode[$p['code']] = $p;
 }
 
+// Riferimento rapido listino tariffe (rif. 7), mostrato nei modal di prenotazione
+$rateByCode = [];
+foreach (($seatRates ?? []) as $r) {
+    if ($r['active']) $rateByCode[$r['code']] = (float) $r['price'];
+}
+$seatRatesHint = trim(
+    (isset($rateByCode['lettino_feriale'], $rateByCode['lettino_festivo'])
+        ? 'Lettino €' . number_format($rateByCode['lettino_feriale'], 0) . ' feriale / €' . number_format($rateByCode['lettino_festivo'], 0) . ' festivo'
+        : '')
+    . (isset($rateByCode['ombrellone']) ? ' · Ombrellone €' . number_format($rateByCode['ombrellone'], 0) : ''),
+    ' ·'
+);
+
 // Costruisce griglia [pos_row][pos_col] = place, raggruppata per area
 $mapGrid      = [];  // [pos_row][pos_col] => place
 $mapRowArea   = [];  // [pos_row] => area_id
@@ -393,7 +406,6 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
               <label class="form-label small fw-semibold mb-1">Fascia oraria</label>
               <select class="form-select form-select-sm" name="time_slot">
                 <option value="intera giornata">Intera giornata</option>
-                <option value="mattina">Mattina</option>
                 <option value="pomeriggio">Pomeriggio</option>
               </select>
             </div>
@@ -416,6 +428,9 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
               <input type="number" class="form-control form-control-sm" name="total_amount" step="0.01" min="0" value="0">
             </div>
           </div>
+          <?php if ($seatRatesHint): ?>
+          <div class="small text-muted mb-2" style="font-size:11px">Listino: <?= e($seatRatesHint) ?></div>
+          <?php endif; ?>
           <!-- Note -->
           <div class="mb-1">
             <label class="form-label small fw-semibold mb-1">Note</label>
@@ -478,7 +493,6 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
               <label class="form-label small fw-semibold mb-1">Fascia oraria</label>
               <select class="form-select form-select-sm" name="time_slot" id="editTimeSlot">
                 <option value="intera giornata">Intera giornata</option>
-                <option value="mattina">Mattina</option>
                 <option value="pomeriggio">Pomeriggio</option>
               </select>
             </div>
@@ -502,6 +516,9 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
               <input type="number" class="form-control form-control-sm" name="total_amount" id="editAmount" step="0.01" min="0" value="0">
             </div>
           </div>
+          <?php if ($seatRatesHint): ?>
+          <div class="small text-muted mb-2" style="font-size:11px">Listino: <?= e($seatRatesHint) ?></div>
+          <?php endif; ?>
           <!-- Note -->
           <div class="mb-1">
             <label class="form-label small fw-semibold mb-1">Note</label>
@@ -940,6 +957,15 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     document.getElementById('editCustomerDropdown').style.display = 'none';
     document.getElementById('editDateFrom').value   = data.usage_date;
     document.getElementById('editDateTo').value     = data.usage_date;
+    // La fascia "mattina" non è più selezionabile per le nuove prenotazioni,
+    // ma va comunque rappresentata correttamente se la prenotazione aperta è storica.
+    var editTimeSlotEl = document.getElementById('editTimeSlot');
+    if (data.time_slot === 'mattina' && !editTimeSlotEl.querySelector('option[value="mattina"]')) {
+      var legacyOpt = document.createElement('option');
+      legacyOpt.value = 'mattina';
+      legacyOpt.textContent = 'Mattina (storico)';
+      editTimeSlotEl.insertBefore(legacyOpt, editTimeSlotEl.firstChild);
+    }
     setSelectValue('editTimeSlot', data.time_slot);
     document.getElementById('editPeople').value     = data.people_count;
     setSelectValue('editStatus', data.status);

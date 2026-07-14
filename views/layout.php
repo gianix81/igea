@@ -17,6 +17,7 @@ $navItems = [
         'children' => [
             ['href' => '/entries', 'label' => 'Reception',     'icon' => '🚪'],
             ['href' => '/places',  'label' => 'Mappa Piscina', 'icon' => '🏊'],
+            ['href' => '/tariffe', 'label' => 'Tariffe',       'icon' => '💶'],
         ],
     ],
     [
@@ -35,6 +36,9 @@ $navItems = [
         ['href' => '/storico/pagamenti', 'label' => 'Storico pagamenti',  'icon' => '💳'],
     ]],
 ];
+if (has_role('admin')) {
+    $navItems[] = ['href' => '/utenti', 'label' => 'Utenti'];
+}
 
 /* is-active helper: check item or any child */
 function nav_active(string $reqPath, array $item): bool {

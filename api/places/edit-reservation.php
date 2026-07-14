@@ -81,10 +81,12 @@ try {
 
         // Assegna i nuovi posti
         $newPlaces = $pdo->query("SELECT * FROM pool_places WHERE id IN ($in)")->fetchAll();
+        $priceSvc = new PriceListService();
         $insRp = $pdo->prepare("INSERT INTO reservation_places (reservation_id, place_id, price, status) VALUES (?, ?, ?, 'prenotato')");
         $updPl = $pdo->prepare("UPDATE pool_places SET status = 'prenotato' WHERE id = ? AND status = 'disponibile'");
         foreach ($newPlaces as $pl) {
-            $insRp->execute([$resId, (int)$pl['id'], (float)$pl['base_price']]);
+            $price = $priceSvc->seatPrice($pl['type'], $date) ?? (float) $pl['base_price'];
+            $insRp->execute([$resId, (int)$pl['id'], $price]);
             $updPl->execute([(int)$pl['id']]);
         }
     }

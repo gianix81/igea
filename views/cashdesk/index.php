@@ -174,6 +174,7 @@ body.ca-active main.app {
 }
 .ca-btn:hover { opacity: .85; }
 .ca-btn.pay           { background: var(--accent); color: var(--accent-ink); }
+.ca-btn.non-ok        { flex: 0 0 auto; background: transparent; color: var(--bad); border: 1.5px solid var(--bad); }
 .ca-btn.checkout      { background: var(--good);  color: #fff; }
 .ca-btn.checkout-warn { background: var(--warn);  color: #fff; }
 
@@ -419,7 +420,10 @@ function caColor(string $name, array $pal): string {
             </div>
           </div>
           <div class="ca-pay-actions">
-            <button type="submit" class="ca-btn pay">💳 Registra pagamento</button>
+            <button type="submit" name="outcome" value="ok" class="ca-btn pay">💳 Registra OK</button>
+            <button type="submit" name="outcome" value="non_ok" class="ca-btn non-ok"
+                    onclick="return confirm('Registrare il tentativo come NON riuscito?\nIl saldo e i movimenti della card non verranno modificati.')"
+                    title="Il pagamento non è andato a buon fine: registra il tentativo senza toccare il saldo">✕ Non OK</button>
             <?php if ($isInside): ?>
             <button type="button" class="ca-btn <?= $due > 0 ? 'checkout-warn' : 'checkout' ?>" id="caCheckoutBtn">
               <?= $due > 0 ? '⚠ Check-out' : '✓ Check-out' ?>

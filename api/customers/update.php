@@ -23,6 +23,8 @@ $docExpiry   = request_input('doc_expiry', '') ?: null;
 $docIssuer   = trim((string) request_input('doc_issuer', ''));
 $photoData   = (string) request_input('photo_data', '');
 $clearPhoto  = (bool) request_input('clear_photo', 0);
+$sigData     = (string) request_input('signature_data', '');
+$clearSig    = (bool) request_input('clear_signature', 0);
 
 if (!$id)        json_response(['success' => false, 'error' => 'ID mancante.']);
 if (!$firstName) json_response(['success' => false, 'error' => 'Nome obbligatorio.']);
@@ -52,6 +54,23 @@ if ($clearPhoto) {
     }
 }
 
+// Gestione firma
+$newSigPath = false;
+if ($clearSig) {
+    $newSigPath = null;
+} elseif ($sigData && str_starts_with($sigData, 'data:image/')) {
+    $sigDir = is_dir(__DIR__ . '/../../public')
+        ? __DIR__ . '/../../public/uploads/signatures/'
+        : __DIR__ . '/../../uploads/signatures/';
+    if (!is_dir($sigDir)) mkdir($sigDir, 0755, true);
+    $sBytes = base64_decode(preg_replace('#^data:image/\w+;base64,#', '', $sigData));
+    if ($sBytes !== false && strlen($sBytes) > 100) {
+        $fname = 's_' . time() . '_' . bin2hex(random_bytes(4)) . '.png';
+        file_put_contents($sigDir . $fname, $sBytes);
+        $newSigPath = 'uploads/signatures/' . $fname;
+    }
+}
+
 $params = [$firstName, $lastName, $phone ?: null, $email ?: null, $fiscalCode ?: null,
            $birthDate, $address ?: null, $privacy, $status, $notes ?: null,
            $docType ?: null, $docNumber ?: null, $docExpiry, $docIssuer ?: null];
@@ -61,6 +80,11 @@ if ($newPhotoPath !== false) {
     $photoSql = ', photo_path=?';
     $params[] = $newPhotoPath;
 }
+$sigSql = '';
+if ($newSigPath !== false) {
+    $sigSql = ', signature_path=?, privacy_signed_at=' . ($newSigPath ? 'NOW()' : 'NULL');
+    $params[] = $newSigPath;
+}
 $params[] = $id;
 
 $pdo->prepare("
@@ -68,7 +92,7 @@ $pdo->prepare("
     SET first_name=?, last_name=?, phone=?, email=?, fiscal_code=?,
         birth_date=?, address=?, privacy_consent=?, status=?, notes=?,
         doc_type=?, doc_number=?, doc_expiry=?, doc_issuer=?
-        $photoSql
+        $photoSql $sigSql
     WHERE id=?
 ")->execute($params);
 

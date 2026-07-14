@@ -19,7 +19,8 @@ if ($q === '') {
             c.is_inside,
             cu.first_name,
             cu.last_name,
-            cu.phone
+            cu.phone,
+            cu.photo_path
         FROM cards c
         JOIN customers cu ON cu.id = c.customer_id
         $todayJoin
@@ -40,7 +41,8 @@ if ($q === '') {
             c.is_inside,
             cu.first_name,
             cu.last_name,
-            cu.phone
+            cu.phone,
+            cu.photo_path
         FROM cards c
         JOIN customers cu ON cu.id = c.customer_id
         $todayJoin
@@ -71,6 +73,7 @@ foreach ($rows as $r) {
         'phone'         => $r['phone'] ?? '',
         'balance'       => (float) $r['balance'],
         'is_inside'     => (bool)  $r['is_inside'],
+        'photo_url'     => $r['photo_path'] ? url($r['photo_path']) : null,
     ];
 }
 

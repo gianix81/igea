@@ -1,0 +1,14 @@
+Options -Indexes
+RewriteEngine On
+
+SetEnv APP_URL https://urbanpulse.it
+SetEnv APP_DEBUG false
+SetEnv DB_HOST db5019856166.hosting-data.io
+SetEnv DB_PORT 3306
+SetEnv DB_DATABASE dbs15351044
+SetEnv DB_USERNAME dbu1280946
+SetEnv DB_PASSWORD Gioia2026@
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]

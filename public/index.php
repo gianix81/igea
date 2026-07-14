@@ -417,7 +417,8 @@ try {
             }
             $areas[$aid]['places'][$p['row_label']][] = $p;
         }
-        $customers = db()->query("SELECT id, CONCAT(first_name,' ',last_name) name, phone FROM customers WHERE status='attivo' ORDER BY last_name, first_name LIMIT 500")->fetchAll();
+        $stmt = db()->query("SELECT cu.id, cu.first_name, cu.last_name, cu.phone, cu.birth_date, GROUP_CONCAT(c.card_code ORDER BY c.created_at SEPARATOR '|') AS card_codes FROM customers cu LEFT JOIN cards c ON c.customer_id = cu.id AND c.status = 'attiva' WHERE cu.status='attivo' GROUP BY cu.id ORDER BY cu.last_name, cu.first_name LIMIT 500");
+        $customers = $stmt->fetchAll();
         $poolAreas = db()->query("SELECT id, name FROM pool_areas WHERE active = 1 ORDER BY id")->fetchAll();
         $rStmt = db()->prepare("
             SELECT r.id, r.reservation_code, r.usage_date, r.time_slot, r.people_count,
@@ -504,7 +505,7 @@ try {
         require_role(['admin', 'reception', 'cassa']);
         $q   = trim((string) request_input('q', ''));
         $pdo = db();
-        $sel  = "SELECT cu.id AS customer_id, cu.first_name, cu.last_name, cu.phone, c.card_code, c.card_type, c.current_balance AS balance, c.is_inside";
+        $sel  = "SELECT cu.id AS customer_id, cu.first_name, cu.last_name, cu.phone, cu.photo_path, c.card_code, c.card_type, c.current_balance AS balance, c.is_inside";
         $from = " FROM customers cu LEFT JOIN cards c ON c.customer_id = cu.id AND c.status = 'attiva' WHERE cu.status = 'attivo'";
         if ($q === '') {
             $stmt = $pdo->prepare($sel . $from . " ORDER BY cu.last_name, cu.first_name LIMIT 60");
@@ -516,7 +517,7 @@ try {
         }
         $results = [];
         foreach ($stmt->fetchAll() as $r) {
-            $results[] = ['card_code' => $r['card_code'], 'card_type' => $r['card_type'], 'customer_id' => (int) $r['customer_id'], 'customer_name' => trim($r['last_name'] . ' ' . $r['first_name']), 'phone' => $r['phone'] ?? '', 'balance' => (float) ($r['balance'] ?? 0), 'is_inside' => (bool) ($r['is_inside'] ?? false), 'photo_url' => null];
+            $results[] = ['card_code' => $r['card_code'], 'card_type' => $r['card_type'], 'customer_id' => (int) $r['customer_id'], 'customer_name' => trim($r['last_name'] . ' ' . $r['first_name']), 'phone' => $r['phone'] ?? '', 'balance' => (float) ($r['balance'] ?? 0), 'is_inside' => (bool) ($r['is_inside'] ?? false), 'photo_url' => $r['photo_path'] ? url($r['photo_path']) : null];
         }
         json_response(['results' => $results]);
     }
@@ -526,7 +527,7 @@ try {
         require_role(['admin', 'bar', 'ristorazione', 'reception', 'cassa']);
         $q   = trim((string) request_input('q', ''));
         $pdo = db();
-        $sel  = "SELECT c.card_code, c.card_type, c.current_balance AS balance, c.is_inside, cu.id AS customer_id, cu.first_name, cu.last_name, cu.phone";
+        $sel  = "SELECT c.card_code, c.card_type, c.current_balance AS balance, c.is_inside, cu.id AS customer_id, cu.first_name, cu.last_name, cu.phone, cu.photo_path";
         $from = " FROM cards c JOIN customers cu ON cu.id = c.customer_id INNER JOIN entries e ON e.card_id = c.id AND e.entry_date = CURDATE() AND e.status IN ('dentro','bloccato') WHERE c.status = 'attiva' AND cu.status = 'attivo'";
         if ($q === '') {
             $stmt = $pdo->prepare($sel . $from . " ORDER BY c.is_inside DESC, cu.last_name, cu.first_name LIMIT 40");
@@ -538,7 +539,7 @@ try {
         }
         $results = [];
         foreach ($stmt->fetchAll() as $r) {
-            $results[] = ['card_code' => $r['card_code'], 'card_type' => $r['card_type'], 'customer_id' => (int) $r['customer_id'], 'customer_name' => trim($r['last_name'] . ' ' . $r['first_name']), 'phone' => $r['phone'] ?? '', 'balance' => (float) $r['balance'], 'is_inside' => (bool) $r['is_inside'], 'photo_url' => null];
+            $results[] = ['card_code' => $r['card_code'], 'card_type' => $r['card_type'], 'customer_id' => (int) $r['customer_id'], 'customer_name' => trim($r['last_name'] . ' ' . $r['first_name']), 'phone' => $r['phone'] ?? '', 'balance' => (float) $r['balance'], 'is_inside' => (bool) $r['is_inside'], 'photo_url' => $r['photo_path'] ? url($r['photo_path']) : null];
         }
         json_response(['results' => $results]);
     }

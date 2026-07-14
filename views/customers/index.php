@@ -956,6 +956,29 @@ function cu_initials(string $first, string $last): string {
                 <input class="form-control" type="date" id="ec_doc_expiry" value="<?= !empty($customer['doc_expiry']) ? date('Y-m-d', strtotime($customer['doc_expiry'])) : '' ?>"></div>
               <div class="col-md-6"><label class="form-label">Rilasciato da</label>
                 <input class="form-control" id="ec_doc_issuer" value="<?= e($customer['doc_issuer'] ?? '') ?>" maxlength="100"></div>
+
+              <!-- Firma privacy -->
+              <div class="col-12"><hr style="border-color:var(--border);margin:4px 0">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">Firma privacy</div>
+              </div>
+              <?php if (!empty($customer['signature_path'])): ?>
+              <div class="col-12">
+                <div class="cu-field-label" style="margin-bottom:6px">Firma attuale</div>
+                <img src="<?= url('/' . e($customer['signature_path'])) ?>" class="cu-sig-thumb" alt="Firma">
+              </div>
+              <?php endif; ?>
+              <div class="col-12">
+                <div id="ec_sig_wrap" style="border:2px dashed var(--border);border-radius:10px;background:#fff;position:relative;cursor:crosshair">
+                  <canvas id="ec_sig_canvas" style="display:block;width:100%;height:120px;touch-action:none"></canvas>
+                  <div id="ec_sig_placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted-2);font-size:14px;pointer-events:none">✍ Firma qui per aggiornare la firma privacy</div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <button type="button" class="btn btn-sm btn-outline-danger" onclick="ecClearSig()">✕ Rimuovi firma</button>
+                  <span class="small text-muted" id="ec_sig_status"><?= !empty($customer['signature_path']) ? '✓ Firma presente' : 'Non firmato' ?></span>
+                </div>
+                <input type="hidden" id="ec_sig_data" value="">
+                <input type="hidden" id="ec_clear_sig" value="0">
+              </div>
             </div>
           </div>
 
@@ -1098,24 +1121,29 @@ function saveCustomer() {
     errEl.classList.remove('d-none'); return;
   }
   ecStopCamera();
-  fetch(UPD_CUSTOMER_URL, { method:'POST', body: new URLSearchParams({
-    _csrf: CSRF, id: CUSTOMER_ID,
-    first_name: fname, last_name: lname,
-    phone:        document.getElementById('ec_phone').value,
-    email:        document.getElementById('ec_email').value,
-    fiscal_code:  document.getElementById('ec_fiscal').value,
-    birth_date:   document.getElementById('ec_birth').value,
-    address:      document.getElementById('ec_address').value,
-    notes:        document.getElementById('ec_notes').value,
-    status:       document.getElementById('ec_status').value,
-    privacy_consent: document.getElementById('ec_privacy').checked ? '1' : '0',
-    doc_type:     document.getElementById('ec_doc_type').value,
-    doc_number:   document.getElementById('ec_doc_number').value,
-    doc_expiry:   document.getElementById('ec_doc_expiry').value,
-    doc_issuer:   document.getElementById('ec_doc_issuer').value,
-    photo_data:   document.getElementById('ec_photo_data').value,
-    clear_photo:  document.getElementById('ec_clear_photo').value,
-  })}).then(function(r) { return r.json(); }).then(function(resp) {
+  var fd = new FormData();
+  fd.append('_csrf', CSRF);
+  fd.append('id', CUSTOMER_ID);
+  fd.append('first_name', fname);
+  fd.append('last_name', lname);
+  fd.append('phone',        document.getElementById('ec_phone').value);
+  fd.append('email',        document.getElementById('ec_email').value);
+  fd.append('fiscal_code',  document.getElementById('ec_fiscal').value);
+  fd.append('birth_date',   document.getElementById('ec_birth').value);
+  fd.append('address',      document.getElementById('ec_address').value);
+  fd.append('notes',        document.getElementById('ec_notes').value);
+  fd.append('status',       document.getElementById('ec_status').value);
+  fd.append('privacy_consent', document.getElementById('ec_privacy').checked ? '1' : '0');
+  fd.append('doc_type',     document.getElementById('ec_doc_type').value);
+  fd.append('doc_number',   document.getElementById('ec_doc_number').value);
+  fd.append('doc_expiry',   document.getElementById('ec_doc_expiry').value);
+  fd.append('doc_issuer',   document.getElementById('ec_doc_issuer').value);
+  fd.append('photo_data',      document.getElementById('ec_photo_data').value);
+  fd.append('clear_photo',     document.getElementById('ec_clear_photo').value);
+  fd.append('signature_data',  document.getElementById('ec_sig_data').value);
+  fd.append('clear_signature', document.getElementById('ec_clear_sig').value);
+  fetch(UPD_CUSTOMER_URL, { method:'POST', body: fd })
+  .then(function(r) { return r.json(); }).then(function(resp) {
     if (resp.success) {
       bootstrap.Modal.getInstance(document.getElementById('editCustomerModal')).hide();
       toast('✓ Cliente aggiornato');
@@ -1198,6 +1226,66 @@ function ecStopCamera() {
   document.getElementById('ec_btn_snap').classList.add('d-none');
   document.getElementById('ec_btn_cam').classList.remove('d-none');
 }
+
+/* Firma nel modal modifica */
+(function() {
+  var _ecSigCanvas, _ecSigCtx, _ecSigDrawing = false, _ecSigHasContent = false, _ecSigRect;
+  function initEcSig() {
+    _ecSigCanvas = document.getElementById('ec_sig_canvas');
+    if (!_ecSigCanvas) return;
+    var wrap = document.getElementById('ec_sig_wrap');
+    _ecSigCanvas.width  = wrap.offsetWidth || 500;
+    _ecSigCanvas.height = 120;
+    _ecSigCtx = _ecSigCanvas.getContext('2d');
+    _ecSigCtx.strokeStyle = '#0f2730';
+    _ecSigCtx.lineWidth = 2.5;
+    _ecSigCtx.lineCap = 'round';
+    _ecSigCtx.lineJoin = 'round';
+    _ecSigHasContent = false;
+    document.getElementById('ec_sig_data').value = '';
+    document.getElementById('ec_clear_sig').value = '0';
+    document.getElementById('ec_sig_placeholder').style.display = '';
+    _ecSigCanvas.addEventListener('pointerdown', function(e) {
+      e.preventDefault();
+      _ecSigDrawing = true;
+      _ecSigRect = _ecSigCanvas.getBoundingClientRect();
+      _ecSigCtx.beginPath();
+      _ecSigCtx.moveTo((e.clientX - _ecSigRect.left) * (_ecSigCanvas.width / _ecSigRect.width),
+                       (e.clientY - _ecSigRect.top)  * (_ecSigCanvas.height / _ecSigRect.height));
+      _ecSigCanvas.setPointerCapture(e.pointerId);
+    });
+    _ecSigCanvas.addEventListener('pointermove', function(e) {
+      if (!_ecSigDrawing) return;
+      e.preventDefault();
+      _ecSigCtx.lineTo((e.clientX - _ecSigRect.left) * (_ecSigCanvas.width / _ecSigRect.width),
+                       (e.clientY - _ecSigRect.top)  * (_ecSigCanvas.height / _ecSigRect.height));
+      _ecSigCtx.stroke();
+      if (!_ecSigHasContent) {
+        _ecSigHasContent = true;
+        document.getElementById('ec_sig_placeholder').style.display = 'none';
+        document.getElementById('ec_sig_status').textContent = '✓ Nuova firma';
+        document.getElementById('ec_sig_status').style.color = 'var(--good)';
+      }
+    });
+    _ecSigCanvas.addEventListener('pointerup', function() {
+      _ecSigDrawing = false;
+      if (_ecSigHasContent) document.getElementById('ec_sig_data').value = _ecSigCanvas.toDataURL('image/png');
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('editCustomerModal');
+    if (modal) modal.addEventListener('shown.bs.modal', function() { setTimeout(initEcSig, 50); });
+  });
+  window.ecClearSig = function() {
+    if (_ecSigCtx) _ecSigCtx.clearRect(0, 0, _ecSigCanvas.width, _ecSigCanvas.height);
+    _ecSigHasContent = false;
+    document.getElementById('ec_sig_data').value = '';
+    document.getElementById('ec_clear_sig').value = '1';
+    document.getElementById('ec_sig_placeholder').style.display = '';
+    document.getElementById('ec_sig_status').textContent = 'Firma rimossa';
+    document.getElementById('ec_sig_status').style.color = 'var(--bad)';
+  };
+})();
 
 /* Edit card */
 function openEditCard(data) {

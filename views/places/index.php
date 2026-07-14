@@ -93,13 +93,10 @@ $statusLabel = ['confermata' => 'Confermata', 'in attesa' => 'In attesa', 'compl
     <div id="mapSummary" class="d-flex gap-2 align-items-center"></div>
 
     <div class="lg-topbar-right ms-auto d-flex align-items-center gap-2">
-      <!-- Zoom -->
-      <div class="lg-zoom-ctrl">
-        <button id="zoomOut" class="lg-zoom-btn" title="Zoom out">−</button>
-        <span id="zoomVal" class="lg-zoom-val">100%</span>
-        <button id="zoomIn"  class="lg-zoom-btn" title="Zoom in">+</button>
-        <button id="zoomReset" class="lg-zoom-reset" title="Reset zoom">↺</button>
-      </div>
+      <!-- Reception -->
+      <a href="<?= url('/entries') ?>" class="btn btn-sm" style="font-size:.75rem;padding:4px 10px;background:#0d9488;color:#fff;border-color:#0d9488">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="margin-right:3px"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z"/></svg>Reception
+      </a>
       <!-- Sidebar toggle -->
       <button id="sidebarToggleBtn" class="lg-sidebar-btn" onclick="toggleSidebar()">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3.5A1.5 1.5 0 013.5 2h9A1.5 1.5 0 0114 3.5v9a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5v-9zM3.5 3a.5.5 0 00-.5.5v9a.5.5 0 00.5.5H10V3H3.5zM11 13h1.5a.5.5 0 00.5-.5v-9a.5.5 0 00-.5-.5H11v10z"/></svg>
@@ -116,6 +113,13 @@ $statusLabel = ['confermata' => 'Confermata', 'in attesa' => 'In attesa', 'compl
       <a href="<?= url('/places/layout?date=' . urlencode($date)) ?>" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;padding:4px 10px" title="Editor schema lettini">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="margin-right:3px"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Schema
       </a>
+      <!-- Zoom -->
+      <div class="lg-zoom-ctrl">
+        <button id="zoomOut" class="lg-zoom-btn" title="Zoom out">−</button>
+        <span id="zoomVal" class="lg-zoom-val">100%</span>
+        <button id="zoomIn"  class="lg-zoom-btn" title="Zoom in">+</button>
+        <button id="zoomReset" class="lg-zoom-reset" title="Reset zoom">↺</button>
+      </div>
     </div>
   </div>
 
@@ -365,12 +369,12 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
           <!-- Cliente -->
           <div class="mb-2">
             <label class="form-label small fw-semibold mb-1">Cliente <span class="text-danger">*</span></label>
-            <select class="form-select form-select-sm" name="customer_id" id="newCustomerId" required>
-              <option value="">Seleziona cliente…</option>
-              <?php foreach ($customers as $c): ?>
-              <option value="<?= (int)$c['id'] ?>"><?= e($c['name']) ?><?= $c['phone'] ? ' · '.e($c['phone']) : '' ?></option>
-              <?php endforeach; ?>
-            </select>
+            <div class="position-relative">
+              <input type="text" class="form-control form-control-sm" id="newCustomerSearch" placeholder="Cerca cognome o nome…" autocomplete="off">
+              <input type="hidden" name="customer_id" id="newCustomerId">
+              <div id="newCustomerDropdown" class="res-cust-dropdown" style="display:none"></div>
+            </div>
+            <div id="newCustomerInfo" class="small text-muted mt-1" style="min-height:16px"></div>
           </div>
           <!-- Periodo -->
           <div class="mb-2">
@@ -450,12 +454,12 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
           <!-- Cliente -->
           <div class="mb-2">
             <label class="form-label small fw-semibold mb-1">Cliente <span class="text-danger">*</span></label>
-            <select class="form-select form-select-sm" name="customer_id" id="editCustomerId" required>
-              <option value="">Seleziona cliente…</option>
-              <?php foreach ($customers as $c): ?>
-              <option value="<?= (int)$c['id'] ?>"><?= e($c['name']) ?><?= $c['phone'] ? ' · '.e($c['phone']) : '' ?></option>
-              <?php endforeach; ?>
-            </select>
+            <div class="position-relative">
+              <input type="text" class="form-control form-control-sm" id="editCustomerSearch" placeholder="Cerca cognome o nome…" autocomplete="off">
+              <input type="hidden" name="customer_id" id="editCustomerId">
+              <div id="editCustomerDropdown" class="res-cust-dropdown" style="display:none"></div>
+            </div>
+            <div id="editCustomerInfo" class="small text-muted mt-1" style="min-height:16px"></div>
           </div>
           <!-- Periodo -->
           <div class="mb-2">
@@ -542,9 +546,14 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
       <form id="assignForm">
         <div class="modal-body">
           <input type="hidden" name="place_id" id="assignPlaceId">
-          <label class="form-label fw-semibold small">Codice Card <span class="text-danger">*</span></label>
-          <input type="text" class="form-control font-monospace" name="card_code"
-                 placeholder="Scansiona o digita il codice…" autocomplete="off" required>
+          <input type="hidden" name="card_code" id="assignCardCode">
+          <label class="form-label fw-semibold small">Cerca per cognome o codice card <span class="text-danger">*</span></label>
+          <div class="position-relative">
+            <input type="text" class="form-control" id="assignSearch"
+                   placeholder="Cognome, nome oppure IGA-2026-…" autocomplete="off">
+            <div id="assignDropdown" class="res-cust-dropdown" style="display:none"></div>
+          </div>
+          <div id="assignSelectedInfo" class="small text-muted mt-1" style="min-height:16px"></div>
           <div id="assignErr" class="alert alert-danger py-2 small mt-3 d-none"></div>
         </div>
         <div class="modal-footer py-2">
@@ -556,11 +565,22 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
   </div>
 </div>
 
+<style>
+.res-cust-dropdown{position:absolute;left:0;right:0;top:100%;margin-top:2px;z-index:1060;
+  background:var(--surface,#fff);border:1.5px solid var(--border,#ddd);border-radius:8px;
+  box-shadow:0 4px 16px rgba(0,0,0,.15);max-height:200px;overflow-y:auto;}
+.res-cust-item{padding:7px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border,#eee);}
+.res-cust-item:last-child{border-bottom:none;}
+.res-cust-item:hover{background:var(--surface-2,#f5f5f5);}
+.res-cust-item.no-result{color:var(--muted-2,#aaa);cursor:default;font-style:italic;}
+</style>
+
 <script>
 (function () {
   'use strict';
 
   const CSRF      = <?= json_encode(csrf_token(), JSON_THROW_ON_ERROR) ?>;
+  const ALL_CUSTOMERS = <?= json_encode(array_values($customers), JSON_THROW_ON_ERROR) ?>;
   const MAP_NROWS = <?= (int)($mapNRows ?: 11) ?>;
   const MAP_NCOLS = <?= (int)($mapNCols ?: 16) ?>;
   const MAP_URL   = <?= json_encode(url('/api/places/map.php'), JSON_THROW_ON_ERROR) ?>;
@@ -774,6 +794,78 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
   // ─────────────────────────────────────────
   // NUOVA PRENOTAZIONE
   // ─────────────────────────────────────────
+  // ── Customer live-search ──────────────────
+  function custSearchInit(inputId, dropdownId, hiddenId, infoId) {
+    const inp = document.getElementById(inputId);
+    const dd  = document.getElementById(dropdownId);
+    if (!inp) return;
+    inp.addEventListener('input', function () {
+      const q = inp.value.trim().toLowerCase();
+      document.getElementById(hiddenId).value = '';
+      document.getElementById(infoId).textContent = '';
+      if (!q) { dd.style.display = 'none'; return; }
+      const hits = ALL_CUSTOMERS.filter(c =>
+        (c.last_name + ' ' + c.first_name).toLowerCase().includes(q) ||
+        c.first_name.toLowerCase().includes(q) ||
+        c.last_name.toLowerCase().includes(q)
+      ).slice(0, 8);
+      if (!hits.length) {
+        dd.innerHTML = '<div class="res-cust-item no-result">Nessun cliente trovato</div>';
+      } else {
+        dd.innerHTML = hits.map(c => {
+          const bd = c.birth_date ? ' · ' + new Date(c.birth_date + 'T00:00:00').toLocaleDateString('it-IT') : '';
+          const ph = c.phone ? ' · ' + esc(c.phone) : '';
+          return `<div class="res-cust-item" data-id="${c.id}" data-last="${esc(c.last_name)}" data-first="${esc(c.first_name)}" data-bd="${c.birth_date||''}" data-phone="${esc(c.phone||'')}">
+            <strong>${esc(c.last_name)} ${esc(c.first_name)}</strong>${ph}${bd ? '<span class="text-muted"> '+bd+'</span>' : ''}
+          </div>`;
+        }).join('');
+        dd.querySelectorAll('.res-cust-item[data-id]').forEach(el => {
+          el.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            document.getElementById(hiddenId).value = el.dataset.id;
+            document.getElementById(inputId).value  = el.dataset.last + ' ' + el.dataset.first;
+            const bd = el.dataset.bd ? new Date(el.dataset.bd + 'T00:00:00').toLocaleDateString('it-IT') : '';
+            document.getElementById(infoId).textContent = (el.dataset.phone || '') + (bd ? (el.dataset.phone ? ' · ' : '') + 'Nato/a il ' + bd : '');
+            dd.style.display = 'none';
+          });
+        });
+      }
+      dd.style.display = '';
+    });
+    inp.addEventListener('blur', function () { setTimeout(() => { dd.style.display = 'none'; }, 150); });
+  }
+
+  function resetCustSearch(inputId, dropdownId, hiddenId, infoId) {
+    document.getElementById(inputId).value = '';
+    document.getElementById(hiddenId).value = '';
+    document.getElementById(infoId).textContent = '';
+    document.getElementById(dropdownId).style.display = 'none';
+  }
+
+  // Init search on both modals
+  document.addEventListener('DOMContentLoaded', function () {
+    custSearchInit('newCustomerSearch', 'newCustomerDropdown', 'newCustomerId', 'newCustomerInfo');
+    custSearchInit('editCustomerSearch', 'editCustomerDropdown', 'editCustomerId', 'editCustomerInfo');
+  });
+
+  // ── Prenota da lettino (fix timing Bootstrap) ──
+  window.bookFromSeat = function (placeId, placeCode) {
+    clearSelectedSeat();
+    const btn = document.querySelector(`.seat[data-id="${placeId}"]`);
+    if (btn) { btn.classList.add('seat-selected'); selectedSeats = [{id: placeId, code: placeCode, btn}]; }
+    seatModal._element.addEventListener('hidden.bs.modal', function handler() {
+      seatModal._element.removeEventListener('hidden.bs.modal', handler);
+      document.getElementById('newResForm').reset();
+      document.getElementById('newDateFrom').value = currentDate;
+      document.getElementById('newDateTo').value   = currentDate;
+      document.getElementById('newResErr').classList.add('d-none');
+      resetCustSearch('newCustomerSearch', 'newCustomerDropdown', 'newCustomerId', 'newCustomerInfo');
+      renderChips('new');
+      newResModal.show();
+    });
+    seatModal.hide();
+  };
+
   window.openNewResModal = function () {
     clearSelectedSeat();
     document.getElementById('newResForm').reset();
@@ -781,6 +873,7 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     document.getElementById('newDateTo').value   = currentDate;
     document.getElementById('newSeatChips').innerHTML = '';
     document.getElementById('newResErr').classList.add('d-none');
+    resetCustSearch('newCustomerSearch', 'newCustomerDropdown', 'newCustomerId', 'newCustomerInfo');
     newResModal.show();
   };
 
@@ -788,6 +881,10 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     e.preventDefault();
     const btn = document.getElementById('newResSubmitBtn');
     const err = document.getElementById('newResErr');
+    if (!document.getElementById('newCustomerId').value) {
+      err.textContent = 'Seleziona un cliente dalla lista.';
+      err.classList.remove('d-none'); return;
+    }
     btn.disabled = true; btn.textContent = '…';
     err.classList.add('d-none');
 
@@ -834,7 +931,10 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     clearSelectedSeat();
 
     document.getElementById('editResId').value      = data.id;
-    document.getElementById('editCustomerId').value = data.customer_id;
+    document.getElementById('editCustomerId').value  = data.customer_id;
+    document.getElementById('editCustomerSearch').value = data.customer_name || '';
+    document.getElementById('editCustomerInfo').textContent = data.customer_phone || '';
+    document.getElementById('editCustomerDropdown').style.display = 'none';
     document.getElementById('editDateFrom').value   = data.usage_date;
     document.getElementById('editDateTo').value     = data.usage_date;
     document.getElementById('editTimeSlot').value   = data.time_slot;
@@ -998,8 +1098,8 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
 
     let footer = '<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Chiudi</button>';
     if (p.day_status === 'disponibile') {
-      footer += `<button class="btn btn-success btn-sm" onclick="openAssign(${p.id},'${esc(p.code)}')">Assegna presente</button>`;
-      footer += `<button class="btn btn-warning btn-sm" onclick="seatModal.hide();openNewResModal()">Prenota</button>`;
+      footer += `<button class="btn btn-success btn-sm" onclick="openAssign(${p.id},'${esc(p.code)}')">Assegna</button>`;
+      footer += `<button class="btn btn-warning btn-sm" onclick="bookFromSeat(${p.id},'${esc(p.code)}')">Prenota</button>`;
     } else if (p.day_status.startsWith('prenotato')) {
       footer += `<button class="btn btn-success btn-sm" onclick="openAssign(${p.id},'${esc(p.code)}')">Check-in</button>`;
       footer += `<button class="btn btn-outline-danger btn-sm" onclick="doCancelPlace(${p.reservation_id})">Cancella prenotazione</button>`;
@@ -1009,15 +1109,79 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     document.getElementById('seatModalFooter').innerHTML = footer;
   }
 
+  // ── Assign search ──────────────────────────
+  (function () {
+    const inp  = () => document.getElementById('assignSearch');
+    const dd   = () => document.getElementById('assignDropdown');
+    const code = () => document.getElementById('assignCardCode');
+    const info = () => document.getElementById('assignSelectedInfo');
+
+    function renderAssignDrop(q) {
+      code().value = ''; info().textContent = '';
+      const isCardCode = /^[A-Z]{2,}/i.test(q) && q.includes('-');
+      if (isCardCode) {
+        // typed a card code directly — use as-is on submit
+        code().value = q.toUpperCase();
+        dd().style.display = 'none';
+        return;
+      }
+      if (q.length < 2) { dd().style.display = 'none'; return; }
+      const hits = ALL_CUSTOMERS.filter(c =>
+        c.last_name.toLowerCase().includes(q.toLowerCase()) ||
+        c.first_name.toLowerCase().includes(q.toLowerCase())
+      ).slice(0, 8);
+      if (!hits.length) {
+        dd().innerHTML = '<div class="res-cust-item no-result">Nessun cliente trovato</div>';
+        dd().style.display = '';
+        return;
+      }
+      dd().innerHTML = hits.map(c => {
+        const cards = c.card_codes ? c.card_codes.split('|') : [];
+        const cardBtns = cards.map(cc =>
+          `<span class="badge bg-secondary font-monospace assign-card-pick" style="cursor:pointer;font-size:.75rem" data-code="${esc(cc)}" data-name="${esc(c.last_name+' '+c.first_name)}">${esc(cc)}</span>`
+        ).join(' ');
+        const bd = c.birth_date ? ' · ' + new Date(c.birth_date + 'T00:00:00').toLocaleDateString('it-IT') : '';
+        return `<div class="res-cust-item">
+          <strong>${esc(c.last_name)} ${esc(c.first_name)}</strong>${c.phone ? ' · ' + esc(c.phone) : ''}${bd}
+          <div style="margin-top:4px">${cardBtns || '<em class="text-muted" style="font-size:.8rem">Nessuna card attiva</em>'}</div>
+        </div>`;
+      }).join('');
+      dd().querySelectorAll('.assign-card-pick').forEach(el => {
+        el.addEventListener('mousedown', function (e) {
+          e.preventDefault();
+          code().value = el.dataset.code;
+          inp().value  = el.dataset.name + ' — ' + el.dataset.code;
+          info().textContent = 'Card: ' + el.dataset.code;
+          dd().style.display = 'none';
+        });
+      });
+      dd().style.display = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('assignSearch').addEventListener('input', function () {
+        renderAssignDrop(this.value.trim());
+      });
+      document.getElementById('assignSearch').addEventListener('blur', function () {
+        setTimeout(() => { dd().style.display = 'none'; }, 150);
+      });
+    });
+  })();
+
   window.openAssign = function (id, code) {
+    seatModal._element.addEventListener('hidden.bs.modal', function handler() {
+      seatModal._element.removeEventListener('hidden.bs.modal', handler);
+      document.getElementById('assignPlaceId').value = id;
+      document.getElementById('assignCode').textContent = code;
+      document.getElementById('assignErr').classList.add('d-none');
+      document.getElementById('assignSearch').value = '';
+      document.getElementById('assignCardCode').value = '';
+      document.getElementById('assignSelectedInfo').textContent = '';
+      document.getElementById('assignDropdown').style.display = 'none';
+      assignModal.show();
+      setTimeout(() => document.getElementById('assignSearch').focus(), 300);
+    });
     seatModal.hide();
-    document.getElementById('assignPlaceId').value = id;
-    document.getElementById('assignCode').textContent = code;
-    document.getElementById('assignErr').classList.add('d-none');
-    document.getElementById('assignForm').reset();
-    document.getElementById('assignPlaceId').value = id;
-    assignModal.show();
-    setTimeout(() => document.querySelector('#assignForm [name=card_code]').focus(), 300);
   };
 
   window.doRelease = function (id) {
@@ -1034,6 +1198,12 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
 
   document.getElementById('assignForm').addEventListener('submit', function (e) {
     e.preventDefault();
+    const cc = document.getElementById('assignCardCode').value.trim();
+    if (!cc) {
+      const el = document.getElementById('assignErr');
+      el.textContent = 'Seleziona un cliente o inserisci il codice card.';
+      el.classList.remove('d-none'); return;
+    }
     apiPost(<?= json_encode(url('/api/places/assign.php'), JSON_THROW_ON_ERROR) ?>, Object.fromEntries(new FormData(this)), 'assignErr');
   });
 

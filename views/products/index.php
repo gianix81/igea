@@ -253,6 +253,7 @@ foreach ($categories as $c) {
       <table class="cat-table" id="productTable">
         <thead>
           <tr>
+            <th></th>
             <th>Prodotto</th>
             <th>Categoria</th>
             <th>Reparto</th>
@@ -264,7 +265,7 @@ foreach ($categories as $c) {
         </thead>
         <tbody>
           <?php if (empty($products)): ?>
-          <tr><td colspan="7">
+          <tr><td colspan="8">
             <div class="cat-empty">
               <div class="cat-empty-icon">📦</div>
               Nessun prodotto trovato.
@@ -283,6 +284,13 @@ foreach ($categories as $c) {
               data-name="<?= e(mb_strtolower($p['name'])) ?>"
               style="cursor:pointer"
               onclick='editProduct(<?= json_encode($p) ?>)'>
+            <td>
+              <?php if (!empty($p['image_path'])): ?>
+                <img src="<?= url('/' . e($p['image_path'])) ?>" alt="" style="width:34px;height:34px;border-radius:6px;object-fit:cover;border:1px solid var(--border)">
+              <?php else: ?>
+                <span style="display:inline-flex;width:34px;height:34px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);align-items:center;justify-content:center;color:var(--muted-2);font-size:15px">📦</span>
+              <?php endif; ?>
+            </td>
             <td>
               <div class="prod-name"><?= e($p['name']) ?></div>
               <?php if ($p['notes']): ?>
@@ -380,6 +388,20 @@ foreach ($categories as $c) {
       <div class="modal-body">
         <input type="hidden" id="pm_id">
         <div class="row g-3">
+          <div class="col-md-3 d-flex flex-column align-items-center gap-2">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);align-self:flex-start">Foto</div>
+            <div id="pm_image_wrap" style="width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center">
+              <span id="pm_image_img" style="font-size:34px;color:var(--muted-2)">📦</span>
+            </div>
+            <label class="btn btn-sm btn-outline-secondary mb-0 w-100" style="cursor:pointer">
+              📁 Da file <input type="file" id="pm_image_file" accept="image/*" style="display:none" onchange="pmLoadFile(this)">
+            </label>
+            <button type="button" class="btn btn-sm btn-outline-danger w-100 d-none" id="pm_image_clear_btn" onclick="pmClearImage()">✕ Rimuovi</button>
+            <input type="hidden" id="pm_image_data" value="">
+            <input type="hidden" id="pm_clear_image" value="0">
+          </div>
+          <div class="col-md-9">
+          <div class="row g-3">
           <div class="col-md-7">
             <div class="form-floating">
               <input type="text" class="form-control" id="pm_name" maxlength="160" placeholder="Nome" required>
@@ -437,6 +459,8 @@ foreach ($categories as $c) {
               <label for="pm_notes">Note</label>
             </div>
           </div>
+          </div>
+          </div>
         </div>
         <div id="pm_error" class="alert alert-danger mt-3 d-none" style="font-size:13px;border-radius:9px"></div>
       </div>
@@ -493,6 +517,7 @@ const SAVE_PROD_URL = '<?= url('/api/products/save.php') ?>';
 const DEL_PROD_URL  = '<?= url('/api/products/delete.php') ?>';
 const SAVE_CAT_URL  = '<?= url('/api/products/save-category.php') ?>';
 const DEL_CAT_URL   = '<?= url('/api/products/delete-category.php') ?>';
+const BASE_URL = <?= json_encode(url('/')) ?>;
 const CSRF = <?= json_encode(csrf_token()) ?>;
 
 /* ── Tabs ────────────────────────────────────────────────────── */
@@ -538,10 +563,43 @@ function openProductModal(data) {
   var delBtn = document.getElementById('pm_delete_btn');
   delBtn.style.display = data ? '' : 'none';
   delBtn.dataset.name = data ? data.name : '';
+  // Foto prodotto
+  document.getElementById('pm_image_data').value  = '';
+  document.getElementById('pm_clear_image').value = '0';
+  pmRenderImage(data && data.image_path ? BASE_URL + data.image_path : null);
   toggleStock();
   new bootstrap.Modal(document.getElementById('productModal')).show();
 }
 function editProduct(data) { openProductModal(data); }
+
+function pmRenderImage(src) {
+  var wrap = document.getElementById('pm_image_wrap');
+  var clearBtn = document.getElementById('pm_image_clear_btn');
+  if (src) {
+    wrap.innerHTML = '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover">';
+    clearBtn.classList.remove('d-none');
+  } else {
+    wrap.innerHTML = '<span style="font-size:34px;color:var(--muted-2)">📦</span>';
+    clearBtn.classList.add('d-none');
+  }
+}
+
+function pmLoadFile(input) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    document.getElementById('pm_image_data').value  = e.target.result;
+    document.getElementById('pm_clear_image').value = '0';
+    pmRenderImage(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function pmClearImage() {
+  document.getElementById('pm_image_data').value  = '';
+  document.getElementById('pm_clear_image').value = '1';
+  pmRenderImage(null);
+}
 
 function deleteProductFromModal() {
   var id   = document.getElementById('pm_id').value;
@@ -577,6 +635,8 @@ function saveProduct() {
       stock_enabled: document.getElementById('pm_stock_enabled').checked ? '1' : '0',
       stock_qty:     document.getElementById('pm_stock_qty').value,
       notes:         document.getElementById('pm_notes').value,
+      image_data:    document.getElementById('pm_image_data').value,
+      clear_image:   document.getElementById('pm_clear_image').value,
     })
   }).then(r => r.json()).then(function (resp) {
     if (resp.success) {

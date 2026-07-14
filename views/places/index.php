@@ -109,6 +109,8 @@ $statusLabel = ['confermata' => 'Confermata', 'in attesa' => 'In attesa', 'compl
       <button class="btn btn-sm btn-primary" style="font-size:.75rem;padding:4px 10px" onclick="openNewResModal()">+ Nuova</button>
       <!-- Lettino extra -->
       <button class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;padding:4px 10px" onclick="openAddExtraModal()" title="Aggiungi lettino extra">+ Lettino</button>
+      <!-- Libera tutto -->
+      <button class="btn btn-sm btn-outline-danger" style="font-size:.75rem;padding:4px 10px" onclick="releaseAllPlaces()" title="Libera tutti i lettini occupati o prenotati per oggi">Libera tutto</button>
       <!-- Editor schema -->
       <a href="<?= url('/places/layout?date=' . urlencode($date)) ?>" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;padding:4px 10px" title="Editor schema lettini">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="margin-right:3px"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Schema
@@ -588,6 +590,7 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
   const EDIT_URL = <?= json_encode(url('/api/places/edit-reservation.php'), JSON_THROW_ON_ERROR) ?>;
   const CANC_URL  = <?= json_encode(url('/api/places/cancel-reservation.php'), JSON_THROW_ON_ERROR) ?>;
   const EXTRA_URL = <?= json_encode(url('/api/places/create-extra.php'), JSON_THROW_ON_ERROR) ?>;
+  const RELEASE_ALL_URL = <?= json_encode(url('/api/places/release-all.php'), JSON_THROW_ON_ERROR) ?>;
   const PLACES_URL = <?= json_encode(url('/places'), JSON_THROW_ON_ERROR) ?>;
   let currentDate  = <?= json_encode($date, JSON_THROW_ON_ERROR) ?>;
 
@@ -1013,6 +1016,28 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     editResModal.hide();
     doCancel(editResCurrentData.id);
   });
+
+  // ─────────────────────────────────────────
+  // LIBERA TUTTO
+  // ─────────────────────────────────────────
+  window.releaseAllPlaces = function () {
+    if (!confirm('Liberare subito tutti i lettini occupati o prenotati per oggi? L\'operazione non annulla le prenotazioni, ma chiude gli ingressi aperti e libera i posti.')) return;
+    fetch(RELEASE_ALL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ _csrf: CSRF }).toString()
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        alert('Fatto: ' + d.entries_closed + ' ingressi chiusi, ' + d.reservations_freed + ' prenotazioni liberate.' + (d.errors.length ? '\nAlcuni errori: ' + d.errors.join('; ') : ''));
+        refreshMap();
+      } else {
+        alert(d.error ?? 'Errore.');
+      }
+    })
+    .catch(() => alert('Errore di rete.'));
+  };
 
   // ─────────────────────────────────────────
   // CANCELLAZIONE

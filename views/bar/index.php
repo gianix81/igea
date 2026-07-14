@@ -125,6 +125,9 @@
 .product-button.dept-extra      { border-top: 4px solid var(--c-extra); background: color-mix(in srgb, var(--c-extra) 9%, var(--surface)); }
 .product-button.dept-altro      { border-top: 4px solid var(--muted-2); }
 
+/* Foto d'esempio prodotto */
+.pb-thumb { width: 100%; height: 64px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; }
+
 /* Dept badge (small pill at top of card) */
 .pb-badge {
   display: inline-block;
@@ -309,6 +312,9 @@ $deptKeys = array_keys($depts);
            data-prod-name="<?= e($p['name']) ?>"
            data-prod-price="<?= (float)$p['price'] ?>"
            <?= !$card ? 'style="opacity:.4;pointer-events:none"' : '' ?>>
+        <?php if (!empty($p['image_path'])): ?>
+          <img class="pb-thumb" src="<?= url('/' . e($p['image_path'])) ?>" alt="">
+        <?php endif; ?>
         <div class="pb-badge"><?= e($deptLabel) ?></div>
         <div class="pb-name"><?= e($p['name']) ?></div>
         <div class="pb-cat"><?= e($p['category_name']) ?></div>

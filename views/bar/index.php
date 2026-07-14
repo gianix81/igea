@@ -5,7 +5,7 @@
 
 /* Left panel */
 .bar-panel-title {
-  font-family:'Bricolage Grotesque',sans-serif;
+  font-family:'Poppins',sans-serif;
   font-size:20px; font-weight:800; color:var(--text); margin-bottom:18px;
 }
 
@@ -83,7 +83,7 @@
 .bar-cbadge-ghost  { background:rgba(255,255,255,.12); color:rgba(255,255,255,.75); }
 .bar-balance-box   { text-align:center; padding:12px 0 4px; }
 .bar-balance-label { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:2px; }
-.bar-balance-num   { font-family:'Bricolage Grotesque',sans-serif; font-size:30px; font-weight:800; }
+.bar-balance-num   { font-family:'Poppins',sans-serif; font-size:30px; font-weight:800; }
 .bar-balance-num.open { color:var(--bad); }
 .bar-balance-num.ok   { color:var(--good); }
 
@@ -94,7 +94,7 @@
 /* Right */
 .bar-products-panel { padding:22px; }
 .bar-products-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
-.bar-products-title { font-family:'Bricolage Grotesque',sans-serif; font-size:18px; font-weight:800; }
+.bar-products-title { font-family:'Poppins',sans-serif; font-size:18px; font-weight:800; }
 .bar-dept-pills { display:flex; gap:6px; flex-wrap:wrap; }
 .bar-dept-pill {
   padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700;
@@ -141,7 +141,7 @@
 .pb-name  { font-size: 14px; font-weight: 800; color: var(--text); display: block; line-height: 1.2; margin-bottom: 2px; }
 .pb-cat   { font-size: 10px; color: var(--muted); margin-bottom: 10px; }
 .pb-price {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 24px; font-weight: 800; line-height: 1; margin-bottom: 10px;
 }
 .dept-bar .pb-price        { color: var(--c-bar);   }
@@ -199,7 +199,7 @@ $deptKeys = array_keys($depts);
   <!-- ── LEFT ──────────────────────────────────────────────── -->
   <div>
     <div class="panel" style="padding:20px">
-      <div class="bar-panel-title">Bar / Ristorazione</div>
+      <div class="bar-panel-title">Seleziona un cliente</div>
 
       <form method="get" id="cardForm" autocomplete="off">
         <div class="bar-search-wrap">
@@ -260,7 +260,7 @@ $deptKeys = array_keys($depts);
       <div id="cartFooter" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <span style="font-size:11px;font-weight:700;color:var(--muted)">Totale ordine</span>
-          <span id="cartTotal" style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:800;color:var(--accent)">€ 0,00</span>
+          <span id="cartTotal" style="font-family:'Poppins',sans-serif;font-size:20px;font-weight:800;color:var(--accent)">€ 0,00</span>
         </div>
         <button type="button" id="cartSendBtn" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">
           Invia ordine →
@@ -332,14 +332,14 @@ $deptKeys = array_keys($depts);
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;width:400px;max-width:94vw;max-height:90vh;box-shadow:0 24px 64px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column">
     <div style="background:color-mix(in srgb,var(--accent) 12%,var(--surface));border-bottom:1px solid var(--border);padding:13px 18px;display:flex;align-items:center;gap:8px;flex-shrink:0">
       <span style="font-size:16px">🧾</span>
-      <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.06em">Conferma ordine</span>
+      <span style="font-family:'Poppins',sans-serif;font-size:13px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.06em">Conferma ordine</span>
     </div>
     <div style="padding:16px 20px;overflow-y:auto;flex:1">
       <div id="bco_customer" style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:12px"></div>
       <div id="bco_items" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
       <div style="border-top:2px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Totale</span>
-        <span id="bco_total" style="font-family:'Bricolage Grotesque',sans-serif;font-size:24px;font-weight:800;color:var(--accent)"></span>
+        <span id="bco_total" style="font-family:'Poppins',sans-serif;font-size:24px;font-weight:800;color:var(--accent)"></span>
       </div>
       <div id="bco_warn" style="display:none;margin-top:10px;background:color-mix(in srgb,var(--warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:9px;padding:9px 13px;font-size:12px;color:var(--warn)">
         ⚠ <strong>Cliente non in struttura.</strong> L'ordine verrà registrato ugualmente.
@@ -353,7 +353,7 @@ $deptKeys = array_keys($depts);
 </div>
 
 <script>
-const SEARCH_URL = '<?= url('/api/bar/search-card') ?>';
+const SEARCH_URL = '<?= url('/api/bar/search-card.php') ?>';
 
 /* ── Avatar helpers ──────────────────────────────────────── */
 function avatarColor(name) {
@@ -384,6 +384,9 @@ function renderDd(results, label) {
   results.forEach(function(r) {
     var col = avatarColor(r.customer_name);
     var ini = initials(r.customer_name);
+    var avatarHtml = r.photo_url
+      ? '<div class="bar-dd-avatar" style="padding:0;overflow:hidden"><img src="' + r.photo_url + '" alt="" style="width:100%;height:100%;object-fit:cover"></div>'
+      : '<div class="bar-dd-avatar" style="background:' + col + '">' + ini + '</div>';
     var balHtml = r.balance > 0
       ? '<span class="bar-dd-bal-open">€ ' + r.balance.toFixed(2).replace('.',',') + '</span>'
       : '<span class="bar-dd-bal-ok">✓ Saldato</span>';
@@ -391,7 +394,7 @@ function renderDd(results, label) {
       ? '<span class="bar-dd-inside">● DENTRO</span>'
       : '<span class="bar-dd-outside">○ fuori</span>';
     html += '<button type="button" class="bar-dd-item" data-code="' + r.card_code + '">'
-      + '<div class="bar-dd-avatar" style="background:' + col + '">' + ini + '</div>'
+      + avatarHtml
       + '<div style="flex:1;min-width:0">'
       + '<div class="bar-dd-name">' + r.customer_name + '</div>'
       + '<div class="bar-dd-sub">' + (r.phone ? '📞 ' + r.phone + ' · ' : '') + r.card_code + '</div>'

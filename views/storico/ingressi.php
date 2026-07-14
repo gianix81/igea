@@ -6,7 +6,7 @@ $stLabels   = ['dentro'=>'Dentro','uscito'=>'Uscito','bloccato'=>'Bloccato'];
 <style>
 .sto-wrap { padding: 22px 28px; max-width: 1280px; margin: 0 auto; }
 .sto-head { display:flex; align-items:center; gap:14px; margin-bottom:20px; flex-wrap:wrap; }
-.sto-title { font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; color:var(--text); flex:1; }
+.sto-title { font-family:'Poppins',sans-serif; font-size:20px; font-weight:800; color:var(--text); flex:1; }
 .sto-filters { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .sto-filter-lbl { font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
 .sto-input {

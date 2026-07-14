@@ -937,9 +937,9 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
     document.getElementById('editCustomerDropdown').style.display = 'none';
     document.getElementById('editDateFrom').value   = data.usage_date;
     document.getElementById('editDateTo').value     = data.usage_date;
-    document.getElementById('editTimeSlot').value   = data.time_slot;
+    setSelectValue('editTimeSlot', data.time_slot);
     document.getElementById('editPeople').value     = data.people_count;
-    document.getElementById('editStatus').value     = data.status;
+    setSelectValue('editStatus', data.status);
     document.getElementById('editAmount').value     = data.total_amount;
     document.getElementById('editNotes').value      = data.notes;
     document.getElementById('editResErr').classList.add('d-none');
@@ -1071,7 +1071,7 @@ if ($zoneOpen): ?></div><!-- /lg-zone --><?php endif;
       : p.day_status.startsWith('occupato') ? 'Occupato'
       : p.day_status;
     let body = `<div class="d-flex align-items-center gap-2 mb-3">
-      <span class="fw-bold" style="font-size:1.3rem;font-family:'Bricolage Grotesque',sans-serif;color:var(--accent)">${esc(p.code)}</span>
+      <span class="fw-bold" style="font-size:1.3rem;font-family:'Poppins',sans-serif;color:var(--accent)">${esc(p.code)}</span>
       <span class="badge ${badgeCls[p.day_status] ?? 'bg-secondary'}">${esc(statusLabel)}</span>
       <span class="ms-auto text-muted small">${esc(p.area_name)}</span>
     </div>`;

@@ -21,7 +21,7 @@ body.ca-active main.app {
 }
 .ca-kpi-label { font-size: 9px; font-weight: 800; text-transform: uppercase;
   letter-spacing: .07em; color: var(--muted-2); margin-bottom: 3px; }
-.ca-kpi-value { font-family: 'Bricolage Grotesque', sans-serif;
+.ca-kpi-value { font-family: 'Poppins', sans-serif;
   font-size: 20px; font-weight: 800; color: var(--text); }
 .ca-kpi-value.warn { color: var(--warn); }
 .ca-kpi-value.good { color: var(--good); }
@@ -38,7 +38,7 @@ body.ca-active main.app {
   border-radius: 13px; display: flex; flex-direction: column; overflow: hidden;
 }
 .ca-list-head { padding: 12px 12px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.ca-list-title { font-family: 'Bricolage Grotesque', sans-serif;
+.ca-list-title { font-family: 'Poppins', sans-serif;
   font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 7px; }
 .ca-search {
   width: 100%; padding: 7px 11px; border-radius: 8px;
@@ -65,7 +65,7 @@ body.ca-active main.app {
 .ca-acc-avatar {
   width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Bricolage Grotesque', sans-serif; font-size: 12px;
+  font-family: 'Poppins', sans-serif; font-size: 12px;
   font-weight: 800; color: #fff; overflow: hidden;
 }
 .ca-acc-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -73,7 +73,7 @@ body.ca-active main.app {
 .ca-acc-name { font-size: 12.5px; font-weight: 700; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ca-acc-sub  { font-size: 10px; color: var(--muted); margin-top: 1px; }
-.ca-acc-bal  { font-family: 'Bricolage Grotesque', sans-serif;
+.ca-acc-bal  { font-family: 'Poppins', sans-serif;
   font-size: 14px; font-weight: 800; flex-shrink: 0; }
 .ca-acc-bal.open { color: var(--warn); }
 .ca-acc-bal.zero { color: var(--good); }
@@ -100,11 +100,11 @@ body.ca-active main.app {
 .ca-det-avatar {
   width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px;
+  font-family: 'Poppins', sans-serif; font-size: 16px;
   font-weight: 800; color: #fff; overflow: hidden;
 }
 .ca-det-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.ca-det-name { font-family: 'Bricolage Grotesque', sans-serif;
+.ca-det-name { font-family: 'Poppins', sans-serif;
   font-size: 18px; font-weight: 800; color: var(--text); line-height: 1.15; }
 .ca-det-meta { font-size: 11.5px; color: var(--muted); }
 .ca-det-code { font-family: monospace; font-size: 11px;
@@ -123,7 +123,7 @@ body.ca-active main.app {
 .ca-det-kpi-cell:last-child { border-right: none; }
 .ca-det-kpi-label { font-size: 8.5px; font-weight: 800; text-transform: uppercase;
   letter-spacing: .07em; color: var(--muted-2); margin-bottom: 2px; }
-.ca-det-kpi-value { font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px; font-weight: 800; }
+.ca-det-kpi-value { font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 800; }
 .ca-det-kpi-value.bar   { color: #17b3c4; }
 .ca-det-kpi-value.risto { color: #e8a020; }
 .ca-det-kpi-value.paid  { color: var(--muted); }

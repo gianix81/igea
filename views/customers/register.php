@@ -29,7 +29,7 @@
 }
 .reg-brand {
   display: flex; align-items: center; gap: 10px;
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 700; font-size: 17px; color: var(--text); text-decoration: none;
 }
 .reg-brand .mark {
@@ -106,6 +106,37 @@
 }
 .reg-select { height: 52px !important; font-size: 16px !important; border-radius: 10px !important; }
 .reg-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+
+/* ── Floating labels ─────────────────────────────────────── */
+.form-floating > .form-control,
+.form-floating > .form-select {
+  height: 58px; min-height: 58px;
+  border-radius: 10px !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  font-size: 16px !important;
+  padding: 1.5rem .9rem .4rem !important;
+}
+.form-floating > textarea.form-control { height: 96px; padding-top: 1.7rem !important; }
+.form-floating > .form-control:focus,
+.form-floating > .form-select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(23,179,196,.15) !important;
+  background: var(--surface) !important;
+}
+.form-floating > label {
+  padding: 1.05rem .9rem; color: var(--muted); font-weight: 600; font-size: 15px;
+}
+.form-floating > label::after { background-color: transparent !important; }
+.form-floating > .form-control:focus ~ label,
+.form-floating:focus-within > label { color: var(--accent); }
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label {
+  transform: scale(.82) translateY(-.55rem) translateX(.1rem);
+  opacity: 1;
+}
 
 /* Webcam */
 .webcam-box {
@@ -184,7 +215,7 @@
   background: rgba(255,255,255,.06);
 }
 .card-visual .card-code {
-  font-family: 'Bricolage Grotesque', monospace;
+  font-family: 'Poppins', monospace;
   font-size: 26px; font-weight: 800; letter-spacing: 2px;
   margin-bottom: 6px;
 }
@@ -282,36 +313,52 @@
             <div class="reg-section-title">Dati personali</div>
             <div class="row g-3">
               <div class="col-sm-6">
-                <label class="reg-label">Nome *</label>
-                <input class="form-control reg-input" id="f_first_name" placeholder="Mario" required>
+                <div class="form-floating">
+                  <input class="form-control" id="f_first_name" placeholder=" " required>
+                  <label for="f_first_name">Nome *</label>
+                </div>
               </div>
               <div class="col-sm-6">
-                <label class="reg-label">Cognome *</label>
-                <input class="form-control reg-input" id="f_last_name" placeholder="Rossi" required>
+                <div class="form-floating">
+                  <input class="form-control" id="f_last_name" placeholder=" " required>
+                  <label for="f_last_name">Cognome *</label>
+                </div>
               </div>
               <div class="col-sm-6">
-                <label class="reg-label">Data di nascita</label>
-                <input class="form-control reg-input" type="date" id="f_birth_date">
+                <div class="form-floating">
+                  <input class="form-control" type="date" id="f_birth_date" placeholder=" ">
+                  <label for="f_birth_date">Data di nascita</label>
+                </div>
               </div>
               <div class="col-sm-6">
-                <label class="reg-label">Codice fiscale</label>
-                <input class="form-control reg-input" id="f_fiscal_code" placeholder="RSSMRA80A01H501Z" maxlength="16" style="text-transform:uppercase">
+                <div class="form-floating">
+                  <input class="form-control" id="f_fiscal_code" placeholder=" " maxlength="16" style="text-transform:uppercase">
+                  <label for="f_fiscal_code">Codice fiscale</label>
+                </div>
               </div>
               <div class="col-sm-6">
-                <label class="reg-label">Telefono *</label>
-                <input class="form-control reg-input" type="tel" id="f_phone" placeholder="333 111 2222" required>
+                <div class="form-floating">
+                  <input class="form-control" type="tel" id="f_phone" placeholder=" " required>
+                  <label for="f_phone">Telefono *</label>
+                </div>
               </div>
               <div class="col-sm-6">
-                <label class="reg-label">Email</label>
-                <input class="form-control reg-input" type="email" id="f_email" placeholder="mario@esempio.it">
+                <div class="form-floating">
+                  <input class="form-control" type="email" id="f_email" placeholder=" ">
+                  <label for="f_email">Email</label>
+                </div>
               </div>
               <div class="col-12">
-                <label class="reg-label">Indirizzo</label>
-                <input class="form-control reg-input" id="f_address" placeholder="Via Roma 1, 00100 Roma">
+                <div class="form-floating">
+                  <input class="form-control" id="f_address" placeholder=" ">
+                  <label for="f_address">Indirizzo</label>
+                </div>
               </div>
               <div class="col-12">
-                <label class="reg-label">Note interne</label>
-                <textarea class="form-control reg-input" id="f_notes" style="height:64px!important" placeholder="Allergie, preferenze, note operative…"></textarea>
+                <div class="form-floating">
+                  <textarea class="form-control" id="f_notes" placeholder=" "></textarea>
+                  <label for="f_notes">Note interne</label>
+                </div>
               </div>
             </div>
           </div>
@@ -323,26 +370,34 @@
             <div class="reg-section-title">Documento d'identità</div>
             <div class="row g-3">
               <div class="col-12">
-                <label class="reg-label">Tipo documento</label>
-                <select class="form-select reg-input reg-select" id="f_doc_type">
-                  <option value="">— seleziona —</option>
-                  <option value="carta_identita">Carta d'Identità (CIE)</option>
-                  <option value="passaporto">Passaporto</option>
-                  <option value="patente">Patente di Guida</option>
-                  <option value="permesso_soggiorno">Permesso di Soggiorno</option>
-                </select>
+                <div class="form-floating">
+                  <select class="form-select" id="f_doc_type">
+                    <option value=""></option>
+                    <option value="carta_identita">Carta d'Identità (CIE)</option>
+                    <option value="passaporto">Passaporto</option>
+                    <option value="patente">Patente di Guida</option>
+                    <option value="permesso_soggiorno">Permesso di Soggiorno</option>
+                  </select>
+                  <label for="f_doc_type">Tipo documento</label>
+                </div>
               </div>
               <div class="col-12">
-                <label class="reg-label">Numero documento</label>
-                <input class="form-control reg-input" id="f_doc_number" placeholder="AB1234567" maxlength="30" style="text-transform:uppercase">
+                <div class="form-floating">
+                  <input class="form-control" id="f_doc_number" placeholder=" " maxlength="30" style="text-transform:uppercase">
+                  <label for="f_doc_number">Numero documento</label>
+                </div>
               </div>
               <div class="col-sm-6">
-                <label class="reg-label">Data scadenza</label>
-                <input class="form-control reg-input" type="date" id="f_doc_expiry">
+                <div class="form-floating">
+                  <input class="form-control" type="date" id="f_doc_expiry" placeholder=" ">
+                  <label for="f_doc_expiry">Data scadenza</label>
+                </div>
               </div>
               <div class="col-sm-6">
-                <label class="reg-label">Rilasciato da</label>
-                <input class="form-control reg-input" id="f_doc_issuer" placeholder="Comune di Roma">
+                <div class="form-floating">
+                  <input class="form-control" id="f_doc_issuer" placeholder=" ">
+                  <label for="f_doc_issuer">Rilasciato da</label>
+                </div>
               </div>
             </div>
 
@@ -354,7 +409,10 @@
               <p style="font-size:12px;color:var(--muted);margin-bottom:10px">
                 Inserisci l'UID del chip NFC se già disponibile. Può essere aggiunto in seguito.
               </p>
-              <input class="form-control reg-input" id="f_nfc_uid" placeholder="Es. 04:A3:2B:11:5C:7D:80" style="font-family:monospace;font-size:14px!important;height:46px!important">
+              <div class="form-floating">
+                <input class="form-control" id="f_nfc_uid" placeholder=" " style="font-family:monospace">
+                <label for="f_nfc_uid">UID chip NFC</label>
+              </div>
               <p style="font-size:11px;color:var(--muted-2);margin-top:6px;margin-bottom:0">
                 🔒 Il chip NFC è crittografato e non modificabile da sistemi esterni.
               </p>
@@ -477,17 +535,21 @@
             <div class="reg-section-title">Tipo card</div>
             <div class="row g-3">
               <div class="col-12">
-                <label class="reg-label">Tipo di card</label>
-                <select class="form-select reg-input reg-select" id="f_card_type">
-                  <option value="nominale">Nominale</option>
-                  <option value="abbonamento">Abbonamento</option>
-                  <option value="ospite">Ospite</option>
-                  <option value="staff">Staff</option>
-                </select>
+                <div class="form-floating">
+                  <select class="form-select" id="f_card_type">
+                    <option value="nominale">Nominale</option>
+                    <option value="abbonamento">Abbonamento</option>
+                    <option value="ospite">Ospite</option>
+                    <option value="staff">Staff</option>
+                  </select>
+                  <label for="f_card_type">Tipo di card</label>
+                </div>
               </div>
               <div class="col-12">
-                <label class="reg-label">Note card</label>
-                <input class="form-control reg-input" id="f_card_notes" placeholder="opzionale">
+                <div class="form-floating">
+                  <input class="form-control" id="f_card_notes" placeholder=" ">
+                  <label for="f_card_notes">Note card</label>
+                </div>
               </div>
             </div>
           </div>

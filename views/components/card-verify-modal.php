@@ -30,7 +30,7 @@
 }
 .cv-header-icon { font-size: 16px; }
 .cv-header-title {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 13px; font-weight: 800; color: var(--text);
   text-transform: uppercase; letter-spacing: .06em;
 }
@@ -48,14 +48,14 @@
 }
 .cv-photo { width: 100%; height: 100%; object-fit: cover; }
 .cv-initials {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 36px; font-weight: 800;
   background: linear-gradient(135deg, var(--accent), #0b3e50);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 
 .cv-name {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 22px; font-weight: 800; color: var(--text);
   margin-bottom: 6px; line-height: 1.15;
 }
@@ -145,6 +145,9 @@ var CardVerify = (function () {
   function getInitials(name) {
     return name.trim().split(/\s+/).map(function(w){ return w[0] || ''; }).join('').toUpperCase().slice(0,2);
   }
+  function titleCase(name) {
+    return (name || '').toLowerCase().replace(/(^|[\s'’-])([\p{L}])/gu, function(_, sep, ch){ return sep + ch.toUpperCase(); });
+  }
 
   function show(data, onConfirm, onCancel) {
     _onConfirm = onConfirm || null;
@@ -161,7 +164,7 @@ var CardVerify = (function () {
       initialsEl.textContent = getInitials(data.customer_name || '');
     }
 
-    nameEl.textContent = data.customer_name || '';
+    nameEl.textContent = titleCase(data.customer_name || '');
     metaEl.textContent = [data.card_type, data.phone].filter(Boolean).join(' · ');
     codeEl.textContent = data.card_code || '';
 

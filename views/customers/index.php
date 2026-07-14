@@ -59,7 +59,7 @@ function cu_initials(string $first, string $last): string {
 .cu-kpi.kpi-red::before    { background: var(--bad); }
 .cu-kpi.kpi-purple::before { background: #7a6bb0; }
 .cu-kpi-num {
-  font-family:'Bricolage Grotesque',sans-serif; font-size:32px; font-weight:800;
+  font-family:'Poppins',sans-serif; font-size:32px; font-weight:800;
   line-height:1; margin-bottom:4px;
 }
 .cu-kpi.kpi-green .cu-kpi-num  { color: var(--good); }
@@ -98,11 +98,11 @@ function cu_initials(string $first, string $last): string {
   font-size:14px; color:var(--text); outline:none;
 }
 .cu-search-wrap button {
-  background:var(--accent); border:none; color:#fff;
-  padding:0 16px; height:40px; font-size:13px; font-weight:700; cursor:pointer;
-  transition:opacity .15s;
+  background:transparent; border:none; color:var(--muted-2);
+  padding:0 14px; height:40px; font-size:15px; font-weight:700; cursor:pointer;
+  transition:color .15s;
 }
-.cu-search-wrap button:hover { opacity:.85; }
+.cu-search-wrap button:hover { color:var(--bad); }
 
 .cu-new-btn {
   display:inline-flex; align-items:center; gap:6px;
@@ -202,7 +202,7 @@ function cu_initials(string $first, string $last): string {
 }
 .cu-profile-main { flex:1; min-width:0; }
 .cu-profile-name {
-  font-family:'Bricolage Grotesque',sans-serif;
+  font-family:'Poppins',sans-serif;
   font-size:26px; font-weight:800; color:#fff; margin-bottom:8px;
 }
 .cu-profile-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
@@ -221,7 +221,7 @@ function cu_initials(string $first, string $last): string {
   background:var(--surface-2); border:1px solid var(--border); border-radius:12px;
   padding:14px 18px; text-align:center;
 }
-.cu-pstat-num { font-size:22px; font-weight:800; font-family:'Bricolage Grotesque',sans-serif; }
+.cu-pstat-num { font-size:22px; font-weight:800; font-family:'Poppins',sans-serif; }
 .cu-pstat-label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; margin-top:2px; }
 
 /* Detail tabs */
@@ -268,7 +268,7 @@ function cu_initials(string $first, string $last): string {
 .cu-cv-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; position:relative; z-index:1; }
 .cu-cv-logo   { font-size:10px; font-weight:800; opacity:.7; letter-spacing:.1em; text-transform:uppercase; }
 .cu-cv-type   { font-size:11px; font-weight:700; opacity:.7; background:rgba(255,255,255,.15); padding:2px 8px; border-radius:20px; }
-.cu-cv-code   { font-family:'Bricolage Grotesque',monospace; font-size:19px; font-weight:800; letter-spacing:2px; margin-bottom:6px; position:relative; z-index:1; }
+.cu-cv-code   { font-family:'Poppins',monospace; font-size:19px; font-weight:800; letter-spacing:2px; margin-bottom:6px; position:relative; z-index:1; }
 .cu-cv-name   { font-size:13px; font-weight:600; opacity:.85; position:relative; z-index:1; }
 .cu-cv-footer { display:flex; align-items:center; justify-content:space-between; margin-top:14px; position:relative; z-index:1; }
 .cu-cv-balance{ font-size:18px; font-weight:800; }
@@ -343,6 +343,26 @@ function cu_initials(string $first, string $last): string {
 }
 .cu-back-btn:hover { border-color:var(--accent); color:var(--accent); }
 
+/* Delete movement button */
+.cu-mov-del {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:7px; cursor:pointer;
+  border:1.5px solid var(--border); background:var(--surface); color:var(--muted-2);
+  transition:all .12s;
+}
+.cu-mov-del:hover { border-color:var(--bad); color:var(--bad); background:color-mix(in srgb, var(--bad) 8%, var(--surface)); }
+
+/* Copy card code button */
+.cu-copy-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:7px; cursor:pointer;
+  border:1.5px solid var(--border); background:var(--surface);
+  color:var(--muted); font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.05em; transition:all .12s;
+}
+.cu-copy-btn:hover { border-color:var(--accent); color:var(--accent); }
+.cu-copy-btn.copied { border-color:var(--good); color:var(--good); }
+
 /* Toast */
 #cu-toast {
   position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(80px);
@@ -388,12 +408,6 @@ function cu_initials(string $first, string $last): string {
     <div class="cu-kpi-num">€&nbsp;<?= number_format($stat_balance, 2, ',', '.') ?></div>
     <div class="cu-kpi-label">Saldo aperto totale</div>
   </div>
-  <?php if ($stat_blacklist): ?>
-  <div class="cu-kpi kpi-purple">
-    <div class="cu-kpi-num"><?= $stat_blacklist ?></div>
-    <div class="cu-kpi-label">Blacklist</div>
-  </div>
-  <?php endif; ?>
 </div>
 
 <!-- Toolbar: pills + search + new button -->
@@ -402,12 +416,11 @@ function cu_initials(string $first, string $last): string {
     <span class="cu-pill active" data-filter="tutti">Tutti (<?= count($customers ?? []) ?>)</span>
     <span class="cu-pill" data-filter="attivo">Attivi</span>
     <span class="cu-pill pill-warn" data-filter="sospeso">Sospesi</span>
-    <span class="cu-pill pill-danger" data-filter="blacklist">Blacklist</span>
   </div>
-  <form method="GET" action="<?= url('/customers') ?>" class="cu-search-wrap">
-    <input type="text" name="q" placeholder="Cerca nome, telefono, email…" value="<?= e($q ?? '') ?>">
-    <button type="submit">Cerca</button>
-  </form>
+  <div class="cu-search-wrap">
+    <input type="text" id="cuSearch" placeholder="Cerca nome, telefono, email, CF, stato…" value="<?= e($q ?? '') ?>" autocomplete="off">
+    <button type="button" id="cuSearchClear" title="Cancella">✕</button>
+  </div>
   <a href="<?= url('/customers/register') ?>" class="cu-new-btn">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     Nuovo cliente
@@ -442,7 +455,7 @@ function cu_initials(string $first, string $last): string {
     </thead>
     <tbody>
     <?php foreach ($customers as $c):
-      $fullName = $c['last_name'] . ' ' . $c['first_name'];
+      $fullName = mb_convert_case($c['last_name'] . ' ' . $c['first_name'], MB_CASE_TITLE, 'UTF-8');
       $initials = cu_initials($c['first_name'], $c['last_name']);
       $bgColor  = cu_avatar_color($fullName);
       $bal      = (float)$c['total_balance'];
@@ -452,11 +465,31 @@ function cu_initials(string $first, string $last): string {
           'blacklist' => 'cu-badge-red',
           default     => 'cu-badge-gray',
       };
+      // Full-text search haystack: every field shown/searchable, lowercased
+      $searchHaystack = mb_strtolower(trim(implode(' ', array_filter([
+          $fullName,
+          $c['first_name'] ?? '',
+          $c['last_name'] ?? '',
+          $c['fiscal_code'] ?? '',
+          $c['phone'] ?? '',
+          $c['email'] ?? '',
+          $c['status'] ?? '',
+          number_format($bal, 2, ',', '.'),
+          number_format($bal, 2, '.', ''),
+      ]))));
     ?>
     <tr data-status="<?= e($c['status']) ?>"
+        data-search="<?= e($searchHaystack) ?>"
         onclick="location.href='<?= url('/customers?id=' . (int)$c['id']) ?>'">
       <td>
-        <div class="cu-avatar" style="background:<?= $bgColor ?>"><?= $initials ?></div>
+        <?php if (!empty($c['photo_path'])): ?>
+          <div class="cu-avatar" style="padding:0;overflow:hidden">
+            <img src="<?= url('/' . e($c['photo_path'])) ?>" alt="<?= e($initials) ?>"
+                 style="width:100%;height:100%;object-fit:cover">
+          </div>
+        <?php else: ?>
+          <div class="cu-avatar" style="background:<?= $bgColor ?>"><?= $initials ?></div>
+        <?php endif; ?>
       </td>
       <td>
         <div style="font-weight:700;font-size:15px"><?= e($fullName) ?></div>
@@ -507,7 +540,7 @@ function cu_initials(string $first, string $last): string {
      DETAIL
 ═══════════════════════════════════════════════════════════════ -->
 <?php
-  $fullName  = $customer['last_name'] . ' ' . $customer['first_name'];
+  $fullName  = mb_convert_case($customer['last_name'] . ' ' . $customer['first_name'], MB_CASE_TITLE, 'UTF-8');
   $initials  = cu_initials($customer['first_name'], $customer['last_name']);
   $avatarBg  = cu_avatar_color($fullName);
   $totalBal  = array_sum(array_column($cards ?? [], 'current_balance'));
@@ -684,7 +717,7 @@ function cu_initials(string $first, string $last): string {
         <?php if ($card['expires_at']): ?>
           <span>Scade: <?= date('d/m/Y', strtotime($card['expires_at'])) ?></span>
         <?php endif; ?>
-        <?php if ($card['last_movement']): ?>
+        <?php if (!empty($card['last_movement'])): ?>
           <span>Ult. mov.: <?= date('d/m H:i', strtotime($card['last_movement'])) ?></span>
         <?php endif; ?>
         <?php if ($card['notes']): ?>
@@ -703,6 +736,10 @@ function cu_initials(string $first, string $last): string {
       <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">
         Movimenti — <?= e($selectedCard['card_code']) ?>
       </div>
+      <button type="button" class="cu-copy-btn" data-code="<?= e($selectedCard['card_code']) ?>" onclick="copyCardCode(this)" title="Copia numero scheda">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copia
+      </button>
       <span class="cu-badge cu-badge-blue"><?= count($movements) ?></span>
     </div>
     <div class="cu-table-wrap">
@@ -715,6 +752,7 @@ function cu_initials(string $first, string $last): string {
             <th>Descrizione</th>
             <th class="text-end">Importo</th>
             <th class="text-center">Stato</th>
+            <th class="text-end" style="width:70px"></th>
           </tr>
         </thead>
         <tbody>
@@ -740,6 +778,18 @@ function cu_initials(string $first, string $last): string {
             <span class="cu-badge <?= $m['status']==='open'?'cu-badge-yellow':($m['status']==='paid'?'cu-badge-green':'cu-badge-gray') ?>">
               <?= e($m['status']) ?>
             </span>
+          </td>
+          <td class="text-end">
+            <?php if ($cancelled): ?>
+              <span style="font-size:10px;color:var(--muted-2)">annullato</span>
+            <?php else: ?>
+              <button type="button" class="cu-mov-del"
+                      data-id="<?= (int)$m['id'] ?>"
+                      data-desc="<?= e($mt['label'] . ' · €' . number_format((float)$m['total_amount'],2,',','.')) ?>"
+                      onclick="deleteMovement(this)" title="Elimina movimento">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            <?php endif; ?>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -795,11 +845,11 @@ function cu_initials(string $first, string $last): string {
         <div class="row g-3">
           <div class="col-sm-6 col-md-3">
             <div class="cu-field-label">Nome</div>
-            <div class="cu-field-value"><?= e($customer['first_name'] ?: '—') ?></div>
+            <div class="cu-field-value"><?= $customer['first_name'] ? e(mb_convert_case($customer['first_name'], MB_CASE_TITLE, 'UTF-8')) : '—' ?></div>
           </div>
           <div class="col-sm-6 col-md-3">
             <div class="cu-field-label">Cognome</div>
-            <div class="cu-field-value"><?= e($customer['last_name'] ?: '—') ?></div>
+            <div class="cu-field-value"><?= $customer['last_name'] ? e(mb_convert_case($customer['last_name'], MB_CASE_TITLE, 'UTF-8')) : '—' ?></div>
           </div>
           <div class="col-sm-6 col-md-3">
             <div class="cu-field-label">Data di nascita</div>
@@ -929,7 +979,6 @@ function cu_initials(string $first, string $last): string {
                 <select class="form-select" id="ec_status">
                   <option value="attivo"    <?= $customer['status']==='attivo'    ?'selected':'' ?>>Attivo</option>
                   <option value="sospeso"   <?= $customer['status']==='sospeso'   ?'selected':'' ?>>Sospeso</option>
-                  <option value="blacklist" <?= $customer['status']==='blacklist' ?'selected':'' ?>>Blacklist</option>
                 </select></div>
               <div class="col-md-6 d-flex align-items-end">
                 <div class="form-check pb-1">
@@ -985,12 +1034,10 @@ function cu_initials(string $first, string $last): string {
         </div>
         <div id="ec_error" class="alert alert-danger mt-3 d-none"></div>
       </div>
-      <div class="modal-footer justify-content-between">
-        <button type="button" class="btn btn-danger btn-sm" onclick="deleteCustomer()">🗑 Elimina cliente</button>
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-          <button type="button" class="btn btn-primary" onclick="saveCustomer()">Salva modifiche</button>
-        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        <button type="button" class="btn btn-danger" onclick="deleteCustomer()">🗑 Elimina cliente</button>
+        <button type="button" class="btn btn-primary ms-auto" onclick="saveCustomer()">Salva modifiche</button>
       </div>
     </div>
   </div>
@@ -1060,7 +1107,7 @@ function cu_initials(string $first, string $last): string {
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-        <button type="button" class="btn btn-primary" onclick="saveCard()">Salva</button>
+        <button type="button" class="btn btn-primary ms-auto" onclick="saveCard()">Salva</button>
       </div>
     </div>
   </div>
@@ -1076,6 +1123,7 @@ const CSRF              = <?= json_encode(csrf_token()) ?>;
 const UPD_CUSTOMER_URL  = '<?= url('/api/customers/update.php') ?>';
 const DEL_CUSTOMER_URL  = '<?= url('/api/customers/delete.php') ?>';
 const UPD_CARD_URL      = '<?= url('/api/customers/update-card.php') ?>';
+const DEL_MOVEMENT_URL  = '<?= url('/api/scheda/storna-consumazione.php') ?>';
 const CUSTOMER_ID       = <?= isset($customer) ? (int)$customer['id'] : 'null' ?>;
 var _ecCameraStream     = null;
 
@@ -1090,17 +1138,108 @@ function toast(msg, isErr) {
   _toTimer = setTimeout(function() { el.style.transform = 'translateX(-50%) translateY(80px)'; }, 2800);
 }
 
-/* Status filter pills (list view) */
-document.querySelectorAll('.cu-pill[data-filter]').forEach(function(pill) {
-  pill.addEventListener('click', function() {
-    document.querySelectorAll('.cu-pill[data-filter]').forEach(function(p) { p.classList.remove('active'); });
-    pill.classList.add('active');
-    var f = pill.getAttribute('data-filter');
-    document.querySelectorAll('#cuTable tbody tr').forEach(function(row) {
-      row.style.display = (f === 'tutti' || row.getAttribute('data-status') === f) ? '' : 'none';
+/* Copy card code to clipboard */
+function copyCardCode(btn) {
+  var code = btn.getAttribute('data-code') || '';
+  function done() {
+    var original = btn.innerHTML;
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiato';
+    toast('✓ Numero scheda copiato');
+    setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = original; }, 1800);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(done).catch(function(){ fallbackCopy(code); done(); });
+  } else {
+    fallbackCopy(code); done();
+  }
+}
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
+
+/* Delete (storno) a movement */
+function deleteMovement(btn) {
+  var id   = btn.getAttribute('data-id');
+  var desc = btn.getAttribute('data-desc') || '';
+  if (!confirm('Eliminare questo movimento?\n' + desc + '\nIl saldo verrà ricalcolato. Operazione non reversibile.')) return;
+  btn.disabled = true;
+  fetch(DEL_MOVEMENT_URL, { method:'POST', body: new URLSearchParams({ _csrf: CSRF, movement_id: id }) })
+  .then(function(r){ return r.json(); }).then(function(resp) {
+    if (resp.success) {
+      toast('✓ Movimento eliminato');
+      setTimeout(function(){ location.reload(); }, 600);
+    } else {
+      btn.disabled = false;
+      toast('Errore: ' + (resp.error || 'sconosciuto'), true);
+    }
+  }).catch(function(){ btn.disabled = false; toast('Errore di rete.', true); });
+}
+
+/* Live search + status filter pills (list view) */
+(function() {
+  var searchInput = document.getElementById('cuSearch');
+  var clearBtn    = document.getElementById('cuSearchClear');
+  var table       = document.getElementById('cuTable');
+  if (!searchInput && !table) return;
+
+  var activeStatus = 'tutti';
+
+  function applyFilters() {
+    if (!table) return;
+    var term = (searchInput ? searchInput.value : '').trim().toLowerCase();
+    var rows = table.querySelectorAll('tbody tr');
+    var visible = 0;
+    rows.forEach(function(row) {
+      var statusOk = (activeStatus === 'tutti') || (row.getAttribute('data-status') === activeStatus);
+      var searchOk = (term === '') || (row.getAttribute('data-search') || '').indexOf(term) !== -1;
+      var show = statusOk && searchOk;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    // "no results" row
+    var emptyRow = document.getElementById('cuNoResults');
+    if (visible === 0) {
+      if (!emptyRow) {
+        var tbody = table.querySelector('tbody');
+        emptyRow = document.createElement('tr');
+        emptyRow.id = 'cuNoResults';
+        emptyRow.innerHTML = '<td colspan="7" style="text-align:center;padding:32px;color:var(--muted-2)">Nessun cliente corrisponde ai filtri.</td>';
+        tbody.appendChild(emptyRow);
+      }
+      emptyRow.style.display = '';
+    } else if (emptyRow) {
+      emptyRow.style.display = 'none';
+    }
+  }
+
+  document.querySelectorAll('.cu-pill[data-filter]').forEach(function(pill) {
+    pill.addEventListener('click', function() {
+      document.querySelectorAll('.cu-pill[data-filter]').forEach(function(p) { p.classList.remove('active'); });
+      pill.classList.add('active');
+      activeStatus = pill.getAttribute('data-filter');
+      applyFilters();
     });
   });
-});
+
+  if (searchInput) {
+    searchInput.addEventListener('input', applyFilters);
+    searchInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') e.preventDefault(); });
+  }
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      if (searchInput) { searchInput.value = ''; searchInput.focus(); }
+      applyFilters();
+    });
+  }
+
+  // Apply once on load (handles pre-filled ?q= value)
+  applyFilters();
+})();
 
 /* Detail tabs */
 function showDetailTab(tab) {
@@ -1291,7 +1430,7 @@ function ecStopCamera() {
 function openEditCard(data) {
   document.getElementById('editCard_id').value     = data.id;
   document.getElementById('editCard_code').textContent = data.card_code;
-  document.getElementById('editCard_status').value = data.status;
+  setSelectValue('editCard_status', data.status);
   document.getElementById('editCard_notes').value  = data.notes || '';
   document.getElementById('editCard_error').classList.add('d-none');
   new bootstrap.Modal(document.getElementById('editCardModal')).show();

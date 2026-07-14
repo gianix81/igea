@@ -148,6 +148,17 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
 .scene{position:absolute;inset:0;z-index:0;overflow:hidden}
 .scene .sun{position:absolute;border-radius:50%;background:radial-gradient(circle at 50% 50%,#ffe39a,#ffcf66 55%,rgba(255,207,102,0) 72%)}
 
+/* foto realistica di sfondo (slide emozionali) */
+.photobg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0}
+.photobg::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(6,34,43,.86),rgba(11,58,72,.66) 55%,rgba(14,85,102,.5))}
+
+/* fondale d'acqua generato (generico, anonimo) */
+.waterbg{position:absolute;inset:0;z-index:0;overflow:hidden}
+.waterbg svg{position:absolute;inset:-6%;width:112%;height:112%}
+.waterbg::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(6,34,43,.80),rgba(11,58,72,.5) 55%,rgba(14,85,102,.34))}
+
 /* flow */
 .flowstep{flex:1;border-radius:16px;padding:18px 14px;text-align:center;position:relative;z-index:2}
 .flowstep .fi{font-size:30px}.flowstep .ft{font-family:'Bricolage Grotesque';font-weight:800;font-size:16px;margin-top:8px}
@@ -174,6 +185,91 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
 .navbtn{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(8,40,50,.6);color:#bfe6ec;font-size:18px;cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(6px)}
 .navbtn:hover{background:var(--aqua);color:#06262f;border-color:var(--aqua)}
 .help{position:fixed;top:14px;right:16px;z-index:50;font-size:11.5px;color:#7fb9c6;background:rgba(8,40,50,.55);padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.08)}
+
+/* ============================================================
+   ANIMAZIONI — attive solo a schermo (body.anim), mai in stampa.
+   Se il JS non parte o l'utente preferisce meno movimento,
+   body.anim non viene aggiunto e tutto resta visibile/fermo.
+   ============================================================ */
+@media screen{
+  /* transizione della slide quando diventa attiva */
+  body.anim .slide.active{animation:slideZoom .55s cubic-bezier(.2,.8,.2,1)}
+  @keyframes slideZoom{from{opacity:.35;transform:scale(.985)}to{opacity:1;transform:none}}
+
+  /* stato iniziale nascosto degli elementi che entrano a cascata */
+  body.anim .slide .kicker,body.anim .slide .title,body.anim .slide .lead,
+  body.anim .slide .meta,body.anim .slide .stat,body.anim .slide .fcard,
+  body.anim .slide .flowstep,body.anim .slide .farrow,body.anim .slide .checks>li,
+  body.anim .slide .tag,body.anim .slide .before,body.anim .slide .after,
+  body.anim .slide .baarrow,body.anim .slide .shot,body.anim .slide .note,
+  body.anim .slide .tile,body.anim .slide .kpi,body.anim .slide .prod,
+  body.anim .slide .bk,body.anim .slide .optbadge,body.anim .slide .optnote,
+  body.anim .slide .balcard,body.anim .slide .hb,body.anim .slide .donut,
+  body.anim .slide .qa{opacity:0}
+
+  /* reveal: l'animation-delay è impostato inline dal JS per lo stagger */
+  body.anim .slide .rv{animation:revUp .68s cubic-bezier(.2,.75,.25,1) both}
+  @keyframes revUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+  /* disegno progressivo del grafico a linee (slide Report) */
+  body.anim .slide.active .linechart polyline{
+    stroke-dasharray:620;stroke-dashoffset:620;animation:draw 1.7s .35s ease forwards}
+  body.anim .slide.active .linechart polyline:nth-child(2){animation-delay:.55s}
+  body.anim .slide.active .linechart polyline:nth-child(3){animation-delay:.75s}
+  @keyframes draw{to{stroke-dashoffset:0}}
+
+  /* crescita delle barre orizzontali */
+  body.anim .slide.active .hb .bf{transform-origin:left center;animation:growx 1s .5s cubic-bezier(.2,.85,.2,1) both}
+  @keyframes growx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+  /* donut: entra ruotando */
+  body.anim .slide.active .donut.rv{animation:revUp .6s both,donutIn 1.1s .15s cubic-bezier(.2,.8,.2,1)}
+  @keyframes donutIn{from{transform:rotate(-120deg) scale(.7)}to{transform:rotate(0) scale(1)}}
+
+  /* ===== animazioni ambientali continue ===== */
+  body.anim .photobg{animation:kenburns 20s ease-in-out infinite alternate}
+  @keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.09)}}
+  body.anim .waterbg svg{animation:waterDrift 26s ease-in-out infinite alternate}
+  @keyframes waterDrift{from{transform:scale(1.04) translate(-1.5%,-1%)}to{transform:scale(1.12) translate(1.5%,1%)}}
+
+  /* illustrazione "carta → card NFC" (slide Prima/Dopo) */
+  body.anim .transimg .ti-card{transform-origin:80px 232px;animation:tiFloat 4.5s ease-in-out infinite}
+  @keyframes tiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  body.anim .transimg .ti-nfc{transform-origin:96px 232px;animation:tiNfc 2.2s ease-in-out infinite}
+  @keyframes tiNfc{0%,100%{opacity:.35}50%{opacity:1}}
+  body.anim .transimg .ti-arrow{animation:tiArrow 2.4s ease-in-out infinite}
+  @keyframes tiArrow{0%,100%{transform:translateY(-2px);opacity:.85}50%{transform:translateY(3px);opacity:1}}
+  body.anim .transimg .ti-spark{animation:tiSpark 2.6s ease-in-out infinite}
+  body.anim .transimg .ti-spark2{animation:tiSpark 2.6s .9s ease-in-out infinite}
+  @keyframes tiSpark{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1)}}
+  body.anim .transimg .ti-papers{transform-origin:80px 60px;animation:tiPapers 5s ease-in-out infinite}
+  @keyframes tiPapers{0%,100%{transform:rotate(0)}50%{transform:rotate(-1.5deg)}}
+
+  body.anim .scene .sun{animation:sunPulse 6.5s ease-in-out infinite}
+  @keyframes sunPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07);filter:brightness(1.12)}}
+
+  body.anim .scene .wavy{animation:waveBob 7s ease-in-out infinite}
+  @keyframes waveBob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
+  /* la chiusura ha le onde specchiate: preservo lo scaleX(-1) */
+  body.anim .scene .wavy.flip{animation:waveBobFlip 7s ease-in-out infinite}
+  @keyframes waveBobFlip{0%,100%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(7px)}}
+
+  body.anim .scene .floaty{animation:floaty 5.5s ease-in-out infinite;transform-origin:60px 122px}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-9px) rotate(3deg)}}
+
+  /* sheen sul testo gradiente */
+  body.anim .gtext{background-size:220% auto;animation:shimmer 5.5s linear infinite}
+  @keyframes shimmer{to{background-position:-220% center}}
+
+  /* dot attivo che pulsa */
+  body.anim .dot.on{animation:dotGlow 2.4s ease-in-out infinite}
+  @keyframes dotGlow{0%,100%{box-shadow:0 0 0 0 rgba(23,179,196,.55)}50%{box-shadow:0 0 0 5px rgba(23,179,196,0)}}
+}
+
+@media (prefers-reduced-motion:reduce){
+  body.anim *{animation:none!important}
+  body.anim .slide *{opacity:1!important;transform:none!important}
+}
 
 @media print{
   @page{size:1240px 697px;margin:0}
@@ -211,6 +307,25 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
 <!-- ============ 1 · COVER ============ -->
 <section class="slide active dark">
   <div class="scene">
+    <div class="waterbg">
+      <svg viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="wgrad" x1="0" y1="0" x2="0.25" y2="1">
+            <stop offset="0" stop-color="#2fd9c5"/><stop offset=".5" stop-color="#13a9c2"/><stop offset="1" stop-color="#0a6a88"/>
+          </linearGradient>
+          <filter id="wripple" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.009 0.02" numOctaves="3" seed="11" stitchTiles="stitch" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="34" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <filter id="wcaustic" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="turbulence" baseFrequency="0.013 0.02" numOctaves="2" seed="4" stitchTiles="stitch" result="t"/>
+            <feColorMatrix in="t" type="matrix" values="0 0 0 0 0.78  0 0 0 0 0.98  0 0 0 0 1  0 0 0 -1.5 1.05"/>
+          </filter>
+        </defs>
+        <rect width="1200" height="675" fill="url(#wgrad)" filter="url(#wripple)"/>
+        <rect width="1200" height="675" filter="url(#wcaustic)" opacity=".55"/>
+      </svg>
+    </div>
     <div class="sun" style="width:260px;height:260px;top:-70px;right:80px;opacity:.5"></div>
     <svg style="position:absolute;left:0;right:0;bottom:0;width:100%;height:210px"><use href="#waves"/></svg>
     <svg style="position:absolute;bottom:48px;right:74px;width:120px;height:130px;opacity:.95"><use href="#umbrella"/></svg>
@@ -243,7 +358,7 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
   <div class="pad">
     <div class="kicker">Il cambio di passo</div>
     <h1 class="title sm">Da come si lavora oggi… a come si lavora con Igea Club</h1>
-    <div class="ba">
+    <div class="ba" style="grid-template-columns:1fr 168px 1fr">
       <div class="bacard before">
         <h3>🧾 Prima</h3>
         <ul>
@@ -253,7 +368,61 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
           <li>A fine giornata i numeri non tornano</li>
         </ul>
       </div>
-      <div class="baarrow">➜</div>
+      <div class="baarrow" style="padding:0 6px">
+        <svg class="transimg" viewBox="0 0 160 320" width="100%" style="max-height:340px" aria-label="Da carta e scontrini a card NFC">
+          <defs>
+            <linearGradient id="tg-card" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#3be0c0"/><stop offset=".5" stop-color="#17b3c4"/><stop offset="1" stop-color="#0e7e9b"/>
+            </linearGradient>
+            <linearGradient id="tg-arrow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#5fe6cf"/><stop offset="1" stop-color="#0e7e9b"/>
+            </linearGradient>
+            <radialGradient id="tg-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0" stop-color="#17b3c4" stop-opacity=".45"/><stop offset="1" stop-color="#17b3c4" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <!-- PRIMA: scontrini / fogli sparsi -->
+          <g class="ti-papers">
+            <g transform="rotate(7 80 60)">
+              <rect x="40" y="22" width="74" height="92" rx="6" fill="#f3e8d2" stroke="#e2d2b2"/>
+            </g>
+            <g transform="rotate(-6 80 60)">
+              <rect x="44" y="16" width="72" height="96" rx="6" fill="#ffffff" stroke="#e6d9c4"/>
+              <path d="M51 30h58 M51 42h58 M51 54h44 M51 66h58 M51 78h38" stroke="#cbb68f" stroke-width="3" stroke-linecap="round"/>
+              <text x="80" y="103" text-anchor="middle" font-family="Arial" font-size="15" font-weight="800" fill="#c0392b">€ ?</text>
+            </g>
+            <path d="M118 40c8-4 14 2 11 9" stroke="#e8624a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <!-- FRECCIA di trasformazione -->
+          <g class="ti-arrow">
+            <path d="M80 132 L80 176 M62 160 L80 180 L98 160" stroke="url(#tg-arrow)" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="112" cy="150" r="2.6" fill="#5fe6cf" class="ti-spark"/>
+            <circle cx="50" cy="166" r="2" fill="#3be0c0" class="ti-spark2"/>
+          </g>
+
+          <!-- DOPO: card NFC + braccialetto -->
+          <g class="ti-card">
+            <ellipse cx="80" cy="262" rx="78" ry="60" fill="url(#tg-glow)"/>
+            <!-- braccialetto (arco) -->
+            <path d="M30 300 a52 30 0 0 1 100 0" fill="none" stroke="#0e7e9b" stroke-width="11" stroke-linecap="round" opacity=".85"/>
+            <path d="M30 300 a52 30 0 0 1 100 0" fill="none" stroke="#17b3c4" stroke-width="5" stroke-linecap="round"/>
+            <!-- card -->
+            <g transform="rotate(-8 80 232)">
+              <rect x="30" y="200" width="100" height="64" rx="11" fill="url(#tg-card)"/>
+              <rect x="40" y="214" width="22" height="16" rx="3" fill="#ffe39a"/>
+              <path d="M40 214v16 M51 214v16 M40 222h22" stroke="#caa23a" stroke-width="1.3"/>
+              <!-- onde contactless -->
+              <g class="ti-nfc" stroke="#eafaff" stroke-width="3.2" fill="none" stroke-linecap="round">
+                <path d="M96 222a12 12 0 0 1 0 20"/>
+                <path d="M104 216a22 22 0 0 1 0 32"/>
+                <path d="M112 210a32 32 0 0 1 0 44"/>
+              </g>
+            </g>
+          </g>
+        </svg>
+      </div>
       <div class="bacard after">
         <h3>🌊 Dopo</h3>
         <ul>
@@ -267,23 +436,6 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
   </div>
   <div class="sbrand"><svg class="lg"><use href="#igeaLogo"/></svg><span class="sep"></span><small>Pool Manager</small></div>
   <div class="snum">03</div>
-</section>
-
-<!-- ============ 4 · I NUMERI ============ -->
-<section class="slide dark">
-  <div class="pad">
-    <div class="kicker">In sintesi</div>
-    <h1 class="title sm">Quattro promesse, misurabili</h1>
-    <div class="stats">
-      <div class="stat glass"><div class="n gtext">1</div><div class="l">Card per ospite:<br>tutto collegato a lei</div></div>
-      <div class="stat glass"><div class="n gtext">0</div><div class="l">Fogli di carta:<br>tutto digitale e tracciato</div></div>
-      <div class="stat glass"><div class="n gtext">100%</div><div class="l">Consumazioni registrate:<br>niente incassi persi</div></div>
-      <div class="stat glass"><div class="n gtext">8</div><div class="l">Moduli in un solo schermo,<br>per tutto lo staff</div></div>
-    </div>
-    <div class="lead" style="margin-top:26px;font-size:16px">Reception, bar, ristorante e cassa lavorano sugli stessi dati, nello stesso momento. Il titolare vede l'andamento della giornata in tempo reale, da qualsiasi dispositivo.</div>
-  </div>
-  <div class="sbrand"><svg class="lg"><use href="#igeaLogo"/></svg><span class="sep"></span><small>Pool Manager</small></div>
-  <div class="snum">04</div>
 </section>
 
 <!-- ============ 5 · COME FUNZIONA ============ -->
@@ -303,7 +455,7 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
     </div>
     <div class="note" style="margin-top:auto;display:flex;gap:12px;align-items:flex-start;background:#fffaf0;border:1px solid #f0e3c8;border-radius:14px;padding:14px 16px">
       <div style="font-size:22px">💡</div>
-      <p style="margin:0;font-size:14px;color:#6b5a2e;line-height:1.45">Il conto è sempre aggiornato e visibile. <b style="color:#3f3413">In opzione</b> si può attivare il <b style="color:#3f3413">blocco uscita a conto aperto</b> (oggi non attivo): lo accendiamo quando volete.</p>
+      <p style="margin:0;font-size:14px;color:#6b5a2e;line-height:1.45">Il conto è sempre aggiornato e visibile. <b style="color:#3f3413">In opzione</b> si può attivare il <b style="color:#3f3413">blocco uscita a conto aperto</b>: lo accendiamo quando volete.</p>
     </div>
   </div>
   <div class="sbrand"><svg class="lg"><use href="#igeaLogo"/></svg><span class="sep"></span><small>Pool Manager</small></div>
@@ -324,9 +476,6 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
       <div class="fcard"><div class="ic">🍹</div><h3>Bar &amp; Ristorante</h3><p>Consumazioni addebitate sulla card.</p></div>
       <div class="fcard"><div class="ic">💰</div><h3>Cassa</h3><p>Saldo, pagamenti e conti aperti sotto controllo.</p></div>
       <div class="fcard"><div class="ic">📈</div><h3>Report</h3><p>Incassi, reparti, top prodotti e andamento.</p></div>
-    </div>
-    <div class="tags">
-      <span class="tag">Accessi a ruoli</span><span class="tag">Tempo reale</span><span class="tag">Tablet &amp; touch</span><span class="tag">Tema chiaro / scuro</span>
     </div>
   </div>
   <div class="sbrand"><svg class="lg"><use href="#igeaLogo"/></svg><span class="sep"></span><small>Pool Manager</small></div>
@@ -542,7 +691,7 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
               <div class="kpi"><div class="l">Incassato oggi</div><div class="v good">€ 1.480</div></div>
               <div class="kpi"><div class="l">Schede saldate</div><div class="v accent">63</div></div></div>
             <div class="panelrow" style="grid-template-columns:1fr 1fr">
-              <div class="balcard"><div style="font-size:12px;color:var(--muted)">Rossi Mario · CARD001</div><div class="bal open">€ 14,00</div><div style="font-size:11px;color:var(--muted)">Bar € 5,00 · Risto € 9,00</div><div class="optnote">🔓 Blocco uscita a conto aperto: <b style="color:#cfe7ff">opzione attivabile</b> (oggi non attiva)</div></div>
+              <div class="balcard"><div style="font-size:12px;color:var(--muted)">Rossi Mario · CARD001</div><div class="bal open">€ 14,00</div><div style="font-size:11px;color:var(--muted)">Bar € 5,00 · Risto € 9,00</div><div class="optnote">🔓 Blocco uscita a conto aperto: <b style="color:#cfe7ff">opzione attivabile</b></div></div>
               <div class="pnl"><div class="lbl">Salda conto</div><div class="field" style="color:var(--muted)">Importo</div><div class="inp" style="margin-bottom:9px">€ 14,00</div><div class="field" style="color:var(--muted)">Metodo</div><div class="inp" style="margin-bottom:9px">Contanti</div><div class="btnp">Registra pagamento</div></div>
             </div>
           </div></div>
@@ -619,37 +768,14 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
 
 <!-- ============ 16 · TUTTO SU MISURA ============ -->
 <section class="slide dark">
-  <div class="scene"><svg style="position:absolute;left:0;right:0;bottom:0;width:100%;height:150px;opacity:.5"><use href="#waves"/></svg></div>
+  <div class="scene"><div class="photobg" style="background-image:url('public/assets/img/photo/resort-pool.jpg')"></div><svg style="position:absolute;left:0;right:0;bottom:0;width:100%;height:150px;opacity:.5"><use href="#waves"/></svg></div>
   <div class="pad center" style="text-align:center;align-items:center;justify-content:center">
     <div class="kicker" style="justify-content:center">Su misura per Igea</div>
     <h1 class="title" style="font-size:38px;margin-top:12px;max-width:24ch">Tutto è personalizzabile.<br><span class="gtext">Il software si adatta a voi, non il contrario.</span></h1>
     <div class="lead" style="margin:16px auto 0;text-align:center">Quello che vedete è un punto di partenza. Nomi, prezzi, tariffe, aree, layout lettini, reparti, ruoli, colori e logo: ogni elemento si modifica per rispecchiare esattamente come lavora Igea.</div>
-    <div class="tags" style="justify-content:center;margin-top:24px;max-width:82ch">
-      <span class="tag">Listini e prezzi</span><span class="tag">Tariffe d'ingresso</span><span class="tag">Aree &amp; lettini</span><span class="tag">Disposizione mappa</span><span class="tag">Reparti</span><span class="tag">Ruoli &amp; permessi</span><span class="tag">Logo &amp; colori</span><span class="tag">Blocco uscita on/off</span><span class="tag">Nuove funzioni</span>
-    </div>
   </div>
   <div class="sbrand"><svg class="lg"><use href="#igeaLogo"/></svg><span class="sep"></span><small>Pool Manager</small></div>
   <div class="snum">16</div>
-</section>
-
-<!-- ============ 17 · CHIUSURA / CTA ============ -->
-<section class="slide dark">
-  <div class="scene">
-    <div class="sun" style="width:220px;height:220px;top:-60px;left:70px;opacity:.45"></div>
-    <svg style="position:absolute;left:0;right:0;bottom:0;width:100%;height:180px;transform:scaleX(-1)"><use href="#waves"/></svg>
-    <svg style="position:absolute;bottom:42px;left:92px;width:104px;height:112px;opacity:.85"><use href="#umbrella"/></svg>
-  </div>
-  <div class="pad">
-    <svg class="logo-foot" style="height:34px;color:#fff;margin-bottom:16px"><use href="#igeaLogo"/></svg>
-    <div class="kicker">La rivoluzione è pronta</div>
-    <h1 class="title" style="font-size:44px;margin-top:10px">Manca solo<br><span class="gtext">il vostro "sì".</span></h1>
-    <div class="row" style="margin-top:22px;gap:40px;max-width:78ch">
-      <div class="col"><div style="font-size:13px;font-weight:800;color:#8fe0ec;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Già operativo</div><div style="font-size:15px;color:#dff1f4;line-height:2">Clienti · Card · Ingressi · Lettini<br>Prenotazioni · Bar · Cassa · Report</div></div>
-      <div class="col"><div style="font-size:13px;font-weight:800;color:#8fe0ec;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Pronti ad aggiungere</div><div style="font-size:15px;color:#dff1f4;line-height:2">Blocco uscita · QR / barcode card<br>Scontrino &amp; POS fiscale · Abbonamenti · Online</div></div>
-    </div>
-    <div class="meta" style="margin-top:28px;font-size:15px;color:#9fdbe6;font-weight:700">Configuriamolo insieme sulle esigenze di Igea. — Grazie.</div>
-  </div>
-  <div class="snum">17</div>
 </section>
 
 </div><!-- /stage -->
@@ -664,9 +790,56 @@ h1,h2,h3,.bric{font-family:'Bricolage Grotesque','Figtree',sans-serif;letter-spa
 var slides=[].slice.call(document.querySelectorAll('.slide')),i=0,dw=document.getElementById('dots');
 slides.forEach(function(_,idx){var d=document.createElement('span');d.className='dot'+(idx===0?' on':'');d.onclick=function(){go(idx)};dw.appendChild(d)});
 var dots=[].slice.call(dw.children);
-function go(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach(function(s,x){s.classList.toggle('active',x===i)});dots.forEach(function(d,x){d.classList.toggle('on',x===i)})}
+
+/* animazioni attive solo se il movimento è gradito */
+var ANIM=!window.matchMedia||!matchMedia('(prefers-reduced-motion:reduce)').matches;
+if(ANIM){
+  document.body.classList.add('anim');
+  /* marca onde, ombrelloni e sole per le animazioni ambientali */
+  [].forEach.call(document.querySelectorAll('use[href="#waves"]'),function(u){
+    var s=u.closest('svg');s.classList.add('wavy');
+    if(/scaleX\(-1\)/.test(s.getAttribute('style')||''))s.classList.add('flip');
+  });
+  [].forEach.call(document.querySelectorAll('use[href="#umbrella"]'),function(u){u.closest('svg').classList.add('floaty')});
+}
+
+var REVEAL='.kicker,.title,.lead,.meta,.stat,.fcard,.flowstep,.farrow,.checks>li,.tag,.before,.after,.baarrow,.shot,.note,.tile,.kpi,.prod,.bk,.optbadge,.optnote,.balcard,.hb,.donut,.qa';
+
+function countUp(el){
+  var raw=el.getAttribute('data-val')||el.textContent;
+  el.setAttribute('data-val',raw);
+  var m=/^(\D*)(\d[\d.]*)(.*)$/.exec(raw);
+  if(!m){return}
+  var pre=m[1],end=parseInt(m[2].replace(/\./g,''),10),suf=m[3],t0=null,dur=1100;
+  function step(ts){
+    if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/dur);
+    var v=Math.round((1-Math.pow(1-p,3))*end);
+    el.textContent=pre+v+suf;
+    if(p<1)requestAnimationFrame(step);else el.textContent=raw;
+  }
+  el.textContent=pre+'0'+suf;requestAnimationFrame(step);
+}
+
+function reveal(slide){
+  if(!ANIM)return;
+  var els=[].slice.call(slide.querySelectorAll(REVEAL));
+  els.forEach(function(el,k){
+    el.classList.remove('rv');void el.offsetWidth;       /* reflow per ri-eseguire */
+    el.style.animationDelay=(0.05+k*0.05)+'s';
+    el.classList.add('rv');
+  });
+  [].forEach.call(slide.querySelectorAll('.stat .n'),countUp);
+}
+
+function go(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach(function(s,x){s.classList.toggle('active',x===i)});
+  dots.forEach(function(d,x){d.classList.toggle('on',x===i)});
+  reveal(slides[i]);
+}
 document.getElementById('next').onclick=function(){go(i+1)};
 document.getElementById('prev').onclick=function(){go(i-1)};
+reveal(slides[0]);
 document.addEventListener('keydown',function(e){
   if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(i+1)}
   else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(i-1)}

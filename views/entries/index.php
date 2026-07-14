@@ -14,7 +14,7 @@
   border-radius: 14px; padding: 20px;
 }
 .en-panel-title {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 20px; font-weight: 800; color: var(--text);
   margin-bottom: 18px;
 }
@@ -110,7 +110,7 @@
   border-radius: 14px; padding: 20px; display: flex; flex-direction: column;
 }
 .en-table-title {
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 18px; font-weight: 800; color: var(--text);
   margin-bottom: 14px;
 }
@@ -364,7 +364,7 @@
   function doSearch(q) {
     if (q === _lastQ) return;
     _lastQ = q;
-    fetch('<?= url('/api/customers/search') ?>?q=' + encodeURIComponent(q))
+    fetch('<?= url('/api/customers/search.php') ?>?q=' + encodeURIComponent(q))
       .then(function(r){ return r.json(); })
       .then(function(d){ renderOptions(d.results || []); });
   }

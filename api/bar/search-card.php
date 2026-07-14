@@ -31,6 +31,8 @@ if ($q === '') {
     ");
     $stmt->execute();
 } else {
+    // Ricerca per testo: cerca tra TUTTE le card attive (non solo gli ingressi di oggi),
+    // così è possibile selezionare un cliente anche per nome/telefono/CF.
     $like = '%' . $q . '%';
     $stmt = db()->prepare("
         SELECT
@@ -45,7 +47,6 @@ if ($q === '') {
             cu.photo_path
         FROM cards c
         JOIN customers cu ON cu.id = c.customer_id
-        $todayJoin
         WHERE c.status = 'attiva'
           AND cu.status = 'attivo'
           AND (

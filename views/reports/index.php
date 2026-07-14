@@ -71,7 +71,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
   display: flex; flex-direction: column; gap: 1px;
 }
 .rp-kpi-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
-.rp-kpi-value { font-family:'Bricolage Grotesque',sans-serif; font-size: 20px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.rp-kpi-value { font-family:'Poppins',sans-serif; font-size: 20px; font-weight: 800; color: var(--text); line-height: 1.1; }
 .rp-kpi-value.accent { color: var(--accent); }
 .rp-kpi-value.good   { color: var(--good); }
 .rp-kpi-value.warn   { color: var(--warn); }
@@ -97,7 +97,7 @@ $prodColors  = json_encode(array_map(fn($r) => $deptColor[$r['department']] ?? '
 }
 .rp-box.grow { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .rp-box-hd {
-  padding: 8px 13px; font-family:'Bricolage Grotesque',sans-serif;
+  padding: 8px 13px; font-family:'Poppins',sans-serif;
   font-size: 12px; font-weight: 800; color: var(--text);
   border-bottom: 1px solid var(--border); background: var(--surface-2);
   flex-shrink: 0;
@@ -356,7 +356,7 @@ var border  = style.getPropertyValue('--border').trim()  || '#dde8eb';
 
 Chart.defaults.color       = muted;
 Chart.defaults.borderColor = border;
-Chart.defaults.font.family = "'Figtree', sans-serif";
+Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.font.size   = 10;
 
 /* Trend */
